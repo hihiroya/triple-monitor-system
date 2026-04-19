@@ -230,6 +230,8 @@ npm run lint:fix
 
 secret scan は Gitleaks を使い、Discord webhook URL、Notion token、その他 API token の誤コミットを検出します。検出時は CI を失敗させます。PR コメント権限を増やさないため `GITLEAKS_ENABLE_COMMENTS=false` にしています。Organization 配下のリポジトリで `gitleaks/gitleaks-action` を使う場合は、必要に応じて `GITLEAKS_LICENSE` を GitHub Secrets に登録してください。
 
+`gitleaks/gitleaks-action` は Node.js 20 runtime の action なので、`quality-check.yml` では `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` を設定し、GitHub Actions runner の Node.js 24 強制切替を先取りしています。将来 Gitleaks action が Node.js 24 対応版を出した場合は、SHA を更新してこの互換設定が不要か確認してください。
+
 `audit` は `npm audit` を実行し、dependencies と devDependencies の既知脆弱性を検出します。GitHub Actions 上では devDependencies も build、lint、test に使うため、CI では `--omit=dev` ではなく全体を確認します。一方でネットワーク依存のチェックなので、ローカルの `npm run check` には含めていません。
 
 Dependabot は npm dependencies と GitHub Actions を週次で確認します。各 workflow には `timeout-minutes` を設定し、外部サイトや API の一時的な停止で Actions が長時間占有されることを防ぎます。

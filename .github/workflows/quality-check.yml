@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+env:
+  # gitleaks/gitleaks-action が Node.js 20 runtime のため、GitHub の Node.js 24 強制切替を先取りする。
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
 concurrency:
   group: quality-check-${{ github.ref }}
   cancel-in-progress: true
