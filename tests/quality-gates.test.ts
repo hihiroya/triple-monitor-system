@@ -84,6 +84,22 @@ describe("quality gate helpers", () => {
     expect(runMonitorBlock).not.toContain("TWITTER_AUTH_TOKEN");
   });
 
+  it("monitor workflow は GitHub expression を exit に直接渡さない", async () => {
+    const workflowPaths = [
+      ".github/workflows/rss-monitor.yml",
+      ".github/workflows/notion-monitor.yml",
+      ".github/workflows/public-site-monitor.yml",
+      ".github/workflows/x-twitter-monitor.yml"
+    ];
+
+    for (const workflowPath of workflowPaths) {
+      const workflow = await readFile(workflowPath, "utf8");
+      expect(workflow).not.toContain('exit "${{ steps.monitor.outputs.exit_code }}"');
+      expect(workflow).toContain("EXIT_CODE: ${{ steps.monitor.outputs.exit_code }}");
+      expect(workflow).toContain("Invalid monitor exit code");
+    }
+  });
+
   it("X/Twitter RSS source は Actions 内の RSSHub だけを参照する", async () => {
     const rawSources = JSON.parse(await readFile("config/sources.json", "utf8")) as unknown;
     const sources = validateSources(rawSources);

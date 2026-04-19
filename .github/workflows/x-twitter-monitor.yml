@@ -88,4 +88,12 @@ jobs:
 
       - name: Propagate monitor failure
         if: steps.monitor.outputs.exit_code != '0'
-        run: exit "${{ steps.monitor.outputs.exit_code }}"
+        env:
+          EXIT_CODE: ${{ steps.monitor.outputs.exit_code }}
+        run: |
+          if [[ "${EXIT_CODE}" =~ ^[0-9]+$ ]] && [ "${EXIT_CODE}" -ge 0 ] && [ "${EXIT_CODE}" -le 255 ]; then
+            exit "${EXIT_CODE}"
+          fi
+
+          echo "Invalid monitor exit code: ${EXIT_CODE}"
+          exit 1
