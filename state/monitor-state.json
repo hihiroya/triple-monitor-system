@@ -1,3 +1,10 @@
 {
-  "sources": {}
+  "sources": {
+    "notion-database-page": {
+      "lastSeenVersion": "2025-09-23T05:34:00.000Z"
+    },
+    "notion-kirinlog-page": {
+      "lastSeenVersion": "2025-09-23T05:34:00.000Z"
+    }
+  }
 }
