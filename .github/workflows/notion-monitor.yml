@@ -34,6 +34,25 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Check Notion monitor secrets
+        env:
+          DISCORD_WEBHOOK_URL_MAIN: ${{ secrets.DISCORD_WEBHOOK_URL_MAIN }}
+          NOTION_TOKEN_MAIN: ${{ secrets.NOTION_TOKEN_MAIN }}
+        run: |
+          # Notion 監視は secret が空でもアプリ起動後まで進むため、監視前に原因を明示する。
+          missing_secrets=()
+          if [ -z "${DISCORD_WEBHOOK_URL_MAIN}" ]; then
+            missing_secrets+=("DISCORD_WEBHOOK_URL_MAIN")
+          fi
+          if [ -z "${NOTION_TOKEN_MAIN}" ]; then
+            missing_secrets+=("NOTION_TOKEN_MAIN")
+          fi
+
+          if [ "${#missing_secrets[@]}" -gt 0 ]; then
+            echo "Missing required secrets: ${missing_secrets[*]}"
+            exit 1
+          fi
+
       - name: Run Notion monitor
         id: monitor
         env:
@@ -56,6 +75,13 @@ jobs:
         env:
           EXIT_CODE: ${{ steps.monitor.outputs.exit_code }}
         run: |
+          {
+            echo "### Notion monitor failed"
+            echo
+            echo "The Notion monitor command exited with code ${EXIT_CODE}."
+            echo "Check the logs in the 'Run Notion monitor' step for the original source failure."
+          } >> "$GITHUB_STEP_SUMMARY"
+
           if [[ "${EXIT_CODE}" =~ ^[0-9]+$ ]] && [ "${EXIT_CODE}" -ge 0 ] && [ "${EXIT_CODE}" -le 255 ]; then
             exit "${EXIT_CODE}"
           fi
