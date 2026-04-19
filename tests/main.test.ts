@@ -98,6 +98,7 @@ describe("main", () => {
     });
 
     expect(parseTypeArg(["--type", "rss"])).toBe("rss");
+    expect(parseTypeArg(["--type", "notion_api_database_poll"])).toBe("notion_api_database_poll");
     expect(parseTypeArg([])).toBeUndefined();
     expect(() => parseTypeArg(["--type", "invalid"])).toThrow("--type には");
     expect(parseGroupArg(["--group", "x-twitter"])).toBe("x-twitter");

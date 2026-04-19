@@ -81,12 +81,13 @@
   },
   {
     "key": "notion-top-page",
-    "type": "notion_api_page_poll",
+    "type": "notion_api_database_poll",
     "label": "スタァライト学会Wiki",
-    "pageId": "2192748f091781ebab20c46d12e324b2",
+    "databaseId": "2192748f091781ebab20c46d12e324b2",
     "notionTokenEnvName": "NOTION_TOKEN_MAIN",
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
-    "enabled": true
+    "enabled": true,
+    "group": "notion"
   },
   {
     "key": "notion-database-page",
@@ -95,16 +96,18 @@
     "pageId": "2192748f09178184ba9dec57ef1a7a65",
     "notionTokenEnvName": "NOTION_TOKEN_MAIN",
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
-    "enabled": true
+    "enabled": true,
+    "group": "notion"
   },
   {
     "key": "notion-kirinlog-page",
-    "type": "notion_api_page_poll",
+    "type": "notion_api_database_poll",
     "label": "キリン寄合ログ",
-    "pageId": "2da2748f091781d59db4d7b0afac5a3b",
+    "databaseId": "2da2748f091781d59db4d7b0afac5a3b",
     "notionTokenEnvName": "NOTION_TOKEN_MAIN",
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
-    "enabled": true
+    "enabled": true,
+    "group": "notion"
   },
   {
     "key": "revuestarlight-news",

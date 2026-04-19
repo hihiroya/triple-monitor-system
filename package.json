@@ -20,7 +20,7 @@
     "monitor:rss": "node dist/main.js --type rss",
     "monitor:rss:standard": "node dist/main.js --type rss --group standard-rss",
     "monitor:x-twitter": "node dist/main.js --type rss --group x-twitter",
-    "monitor:notion": "node dist/main.js --type notion_api_page_poll",
+    "monitor:notion": "node dist/main.js --group notion",
     "monitor:public-html": "node dist/main.js --type public_html_list_poll"
   },
   "engines": {

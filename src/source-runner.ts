@@ -1,5 +1,5 @@
 import { notifyDiscord } from "./discord.js";
-import { fetchNotionPageSnapshot } from "./notion.js";
+import { fetchNotionDatabaseSnapshot, fetchNotionPageSnapshot } from "./notion.js";
 import { fetchPublicHtmlSnapshot } from "./public-html.js";
 import { fetchRssSnapshot } from "./rss.js";
 import type {
@@ -24,6 +24,9 @@ async function fetchSnapshot(source: MonitorSource): Promise<SourceSnapshot> {
   }
   if (source.type === "notion_api_page_poll") {
     return fetchNotionPageSnapshot(source);
+  }
+  if (source.type === "notion_api_database_poll") {
+    return fetchNotionDatabaseSnapshot(source);
   }
   return fetchPublicHtmlSnapshot(source);
 }

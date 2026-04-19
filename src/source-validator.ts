@@ -1,5 +1,6 @@
 import type {
   MonitorSource,
+  NotionDatabaseSource,
   PublicHtmlListSource,
   RssSource,
   SelectorStrategyName,
@@ -9,6 +10,7 @@ import type {
 const SOURCE_TYPES: readonly SourceType[] = [
   "rss",
   "notion_api_page_poll",
+  "notion_api_database_poll",
   "public_html_list_poll"
 ];
 const SELECTOR_STRATEGIES: readonly SelectorStrategyName[] = ["revuestarlight_news_list"];
@@ -62,10 +64,10 @@ function requireHttpUrl(record: Record<string, unknown>, field: string): string 
   return url.toString();
 }
 
-function requireNotionPageId(record: Record<string, unknown>, field: string): string {
+function requireNotionId(record: Record<string, unknown>, field: string): string {
   const value = requireString(record, field).replaceAll("-", "");
   if (!/^[0-9a-fA-F]{32}$/.test(value)) {
-    throw new Error(`${field} は 32 桁の Notion page ID である必要があります`);
+    throw new Error(`${field} は 32 桁の Notion ID である必要があります`);
   }
   return value;
 }
@@ -144,9 +146,19 @@ function validateSource(value: unknown, index: number, seenKeys: Set<string>): M
     return {
       ...commonWithGroup,
       type: "notion_api_page_poll",
-      pageId: requireNotionPageId(value, "pageId"),
+      pageId: requireNotionId(value, "pageId"),
       notionTokenEnvName: requireEnvName(value, "notionTokenEnvName")
     };
+  }
+
+  if (commonWithGroup.type === "notion_api_database_poll") {
+    const source: NotionDatabaseSource = {
+      ...commonWithGroup,
+      type: "notion_api_database_poll",
+      databaseId: requireNotionId(value, "databaseId"),
+      notionTokenEnvName: requireEnvName(value, "notionTokenEnvName")
+    };
+    return source;
   }
 
   const strategy = requireString(value, "selectorStrategy");

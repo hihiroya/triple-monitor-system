@@ -9,6 +9,7 @@ import { asErrorMessage } from "./utils.js";
 const SOURCE_TYPES: readonly SourceType[] = [
   "rss",
   "notion_api_page_poll",
+  "notion_api_database_poll",
   "public_html_list_poll"
 ];
 

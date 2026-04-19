@@ -24,6 +24,15 @@ describe("validateSources", () => {
         enabled: false
       },
       {
+        key: "notion-database-main",
+        type: "notion_api_database_poll",
+        label: "Notion Database",
+        databaseId: "11111111-1111-1111-1111-111111111111",
+        notionTokenEnvName: "NOTION_TOKEN_MAIN",
+        webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+        enabled: true
+      },
+      {
         key: "html-main",
         type: "public_html_list_poll",
         label: "HTML",
@@ -35,7 +44,7 @@ describe("validateSources", () => {
       }
     ]);
 
-    expect(sources).toHaveLength(3);
+    expect(sources).toHaveLength(4);
     expect(sources[0]).toMatchObject({
       key: "rss-main",
       type: "rss",
@@ -48,6 +57,11 @@ describe("validateSources", () => {
       pageId: "00000000000000000000000000000000"
     });
     expect(sources[2]).toMatchObject({
+      key: "notion-database-main",
+      type: "notion_api_database_poll",
+      databaseId: "11111111111111111111111111111111"
+    });
+    expect(sources[3]).toMatchObject({
       key: "html-main",
       type: "public_html_list_poll",
       url: "https://example.com/news/",
@@ -163,7 +177,23 @@ describe("validateSources", () => {
           enabled: true
         }
       ])
-    ).toThrow("pageId は 32 桁の Notion page ID である必要があります");
+    ).toThrow("pageId は 32 桁の Notion ID である必要があります");
+  });
+
+  it("不正な Notion databaseId を拒否する", () => {
+    expect(() =>
+      validateSources([
+        {
+          key: "notion-database-main",
+          type: "notion_api_database_poll",
+          label: "Notion Database",
+          databaseId: "invalid",
+          notionTokenEnvName: "NOTION_TOKEN_MAIN",
+          webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+          enabled: true
+        }
+      ])
+    ).toThrow("databaseId は 32 桁の Notion ID である必要があります");
   });
 
   it("範囲外の maxItems を拒否する", () => {

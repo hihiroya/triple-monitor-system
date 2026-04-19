@@ -1,10 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { notifyDiscord } from "../src/discord.js";
-import { fetchNotionPageSnapshot } from "../src/notion.js";
+import { fetchNotionDatabaseSnapshot, fetchNotionPageSnapshot } from "../src/notion.js";
 import { fetchPublicHtmlSnapshot } from "../src/public-html.js";
 import { fetchRssSnapshot } from "../src/rss.js";
 import { runSource } from "../src/source-runner.js";
-import type { MonitorItem, MonitorState, NotionPageSource, RssSource } from "../src/types.js";
+import type {
+  MonitorItem,
+  MonitorState,
+  NotionDatabaseSource,
+  NotionPageSource,
+  RssSource
+} from "../src/types.js";
 
 vi.mock("../src/discord.js", () => ({
   notifyDiscord: vi.fn()
@@ -15,6 +21,7 @@ vi.mock("../src/rss.js", () => ({
 }));
 
 vi.mock("../src/notion.js", () => ({
+  fetchNotionDatabaseSnapshot: vi.fn(),
   fetchNotionPageSnapshot: vi.fn()
 }));
 
@@ -41,6 +48,16 @@ const notionSource: NotionPageSource = {
   enabled: true
 };
 
+const notionDatabaseSource: NotionDatabaseSource = {
+  key: "notion-database-main",
+  type: "notion_api_database_poll",
+  label: "Notion Database",
+  databaseId: "11111111111111111111111111111111",
+  notionTokenEnvName: "NOTION_TOKEN_MAIN",
+  webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+  enabled: true
+};
+
 function item(id: string): MonitorItem {
   return {
     id,
@@ -53,6 +70,7 @@ describe("runSource", () => {
   beforeEach(() => {
     vi.mocked(notifyDiscord).mockReset();
     vi.mocked(fetchRssSnapshot).mockReset();
+    vi.mocked(fetchNotionDatabaseSnapshot).mockReset();
     vi.mocked(fetchNotionPageSnapshot).mockReset();
     vi.mocked(fetchPublicHtmlSnapshot).mockReset();
   });
@@ -195,6 +213,24 @@ describe("runSource", () => {
     });
     expect(state.sources["notion-main"]).toEqual({
       lastSeenVersion: "2026-04-19T01:00:00.000Z"
+    });
+  });
+
+  it("database version source では Notion database snapshot を取得する", async () => {
+    vi.mocked(fetchNotionDatabaseSnapshot).mockResolvedValue({
+      kind: "version",
+      version: "2026-04-19T02:00:00.000Z",
+      title: "Database updated"
+    });
+    const state: MonitorState = { sources: {} };
+
+    const result = await runSource(notionDatabaseSource, state);
+
+    expect(result).toMatchObject({ ok: true, changed: true });
+    expect(fetchNotionDatabaseSnapshot).toHaveBeenCalledWith(notionDatabaseSource);
+    expect(fetchNotionPageSnapshot).not.toHaveBeenCalled();
+    expect(state.sources["notion-database-main"]).toEqual({
+      lastSeenVersion: "2026-04-19T02:00:00.000Z"
     });
   });
 });

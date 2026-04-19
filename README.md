@@ -91,16 +91,16 @@ TWITTER_AUTH_TOKEN
 
 `sources.json` は配列です。全 source 共通で次のキーを持ちます。
 
-| キー             | 説明                                                                    |
-| ---------------- | ----------------------------------------------------------------------- |
-| `key`            | state の識別子です。重複不可です。                                      |
-| `type`           | `rss`、`notion_api_page_poll`、`public_html_list_poll` のいずれかです。 |
-| `label`          | Discord 通知のタイトルです。                                            |
-| `webhookEnvName` | Discord webhook URL を入れた環境変数名です。                            |
-| `enabled`        | `true` の source だけ監視します。                                       |
-| `group`          | 任意の実行グループです。RSS workflow の分割実行に使います。             |
+| キー             | 説明                                                                                                |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| `key`            | state の識別子です。重複不可です。                                                                  |
+| `type`           | `rss`、`notion_api_page_poll`、`notion_api_database_poll`、`public_html_list_poll` のいずれかです。 |
+| `label`          | Discord 通知のタイトルです。                                                                        |
+| `webhookEnvName` | Discord webhook URL を入れた環境変数名です。                                                        |
+| `enabled`        | `true` の source だけ監視します。                                                                   |
+| `group`          | 任意の実行グループです。RSS workflow の分割実行に使います。                                         |
 
-RSS では `rssUrl` と任意の `maxItems` を使います。Notion では `pageId` と `notionTokenEnvName` を使います。公開 HTML では `url`、`selectorStrategy`、任意の `maxItems` を使います。
+RSS では `rssUrl` と任意の `maxItems` を使います。Notion page では `pageId` と `notionTokenEnvName`、Notion database では `databaseId` と `notionTokenEnvName` を使います。公開 HTML では `url`、`selectorStrategy`、任意の `maxItems` を使います。
 
 ## 監視タイプ
 
@@ -116,7 +116,7 @@ RSSHub の container image は `ghcr.io/diygod/rsshub@sha256:...` で digest 固
 
 ### Notion API
 
-Notion の retrieve page API を呼び出し、`last_edited_time` を `lastSeenVersion` と比較します。Notion integration を作成し、対象ページに integration を招待したうえで、internal integration token を GitHub Secrets に登録してください。
+Notion の retrieve page API または retrieve database API を呼び出し、`last_edited_time` を `lastSeenVersion` と比較します。Notion integration を作成し、対象ページまたは対象データベースに integration を招待したうえで、internal integration token を GitHub Secrets に登録してください。database ID を `notion_api_page_poll` に指定すると Notion API は `Provided ID ... is a database, not a page` を返すため、database 監視には `notion_api_database_poll` と `databaseId` を使います。
 
 ### 公開 HTML 一覧
 
@@ -171,7 +171,8 @@ $env:TWITTER_AUTH_TOKEN="..."
 - X/Twitter だけ失敗する場合: `X Twitter Monitor`、`TWITTER_AUTH_TOKEN`、RSSHub digest を確認してください。通常 RSS は別 workflow の `RSS Monitor` で切り分けられます。
 - `HTML一覧から記事リンクを抽出できませんでした`: 対象サイトの HTML 構造が変わった可能性があります。`selector-strategies.ts` の strategy を更新してください。
 - `既読 item が取得結果に見つかりません`: `maxItems` を増やすか、RSS/HTML の取得順と selector strategy を確認してください。
-- `Notion APIレスポンスに last_edited_time がありません`: `pageId` や integration の権限を確認してください。
+- `Provided ID ... is a database, not a page`: `type` を `notion_api_database_poll` にし、`pageId` ではなく `databaseId` を使ってください。
+- `Notion APIレスポンスに last_edited_time がありません`: `pageId`、`databaseId`、integration の権限を確認してください。
 - Actions は 1 source でも失敗すると最後に失敗扱いになります。ただし source ごとに try/catch しているため、他 source の監視は継続されます。
 
 ## セキュリティ注意

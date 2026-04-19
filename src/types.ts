@@ -1,4 +1,8 @@
-export type SourceType = "rss" | "notion_api_page_poll" | "public_html_list_poll";
+export type SourceType =
+  | "rss"
+  | "notion_api_page_poll"
+  | "notion_api_database_poll"
+  | "public_html_list_poll";
 
 export interface BaseSource {
   key: string;
@@ -21,6 +25,12 @@ export interface NotionPageSource extends BaseSource {
   notionTokenEnvName: string;
 }
 
+export interface NotionDatabaseSource extends BaseSource {
+  type: "notion_api_database_poll";
+  databaseId: string;
+  notionTokenEnvName: string;
+}
+
 export type SelectorStrategyName = "revuestarlight_news_list";
 
 export interface PublicHtmlListSource extends BaseSource {
@@ -30,7 +40,11 @@ export interface PublicHtmlListSource extends BaseSource {
   selectorStrategy: SelectorStrategyName;
 }
 
-export type MonitorSource = RssSource | NotionPageSource | PublicHtmlListSource;
+export type MonitorSource =
+  | RssSource
+  | NotionPageSource
+  | NotionDatabaseSource
+  | PublicHtmlListSource;
 
 export interface MonitorItem {
   id: string;

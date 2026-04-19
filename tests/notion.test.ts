@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchNotionPageSnapshot } from "../src/notion.js";
-import type { NotionPageSource } from "../src/types.js";
+import { fetchNotionDatabaseSnapshot, fetchNotionPageSnapshot } from "../src/notion.js";
+import type { NotionDatabaseSource, NotionPageSource } from "../src/types.js";
 
 type FetchMock = ReturnType<typeof vi.fn<typeof fetch>>;
 
@@ -9,6 +9,16 @@ const notionSource: NotionPageSource = {
   type: "notion_api_page_poll",
   label: "Notion Label",
   pageId: "00000000000000000000000000000000",
+  notionTokenEnvName: "NOTION_TOKEN_MAIN",
+  webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+  enabled: true
+};
+
+const notionDatabaseSource: NotionDatabaseSource = {
+  key: "notion-database-main",
+  type: "notion_api_database_poll",
+  label: "Database Label",
+  databaseId: "11111111111111111111111111111111",
   notionTokenEnvName: "NOTION_TOKEN_MAIN",
   webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
   enabled: true
@@ -151,6 +161,74 @@ describe("fetchNotionPageSnapshot", () => {
 
     await expect(fetchNotionPageSnapshot(notionSource)).rejects.toThrow(
       "Notion APIレスポンスに last_edited_time がありません"
+    );
+  });
+});
+
+describe("fetchNotionDatabaseSnapshot", () => {
+  beforeEach(() => {
+    process.env.NOTION_TOKEN_MAIN = "secret_test_token";
+  });
+
+  afterEach(() => {
+    delete process.env.NOTION_TOKEN_MAIN;
+    vi.unstubAllGlobals();
+  });
+
+  it("retrieve database レスポンスから last_edited_time と title を抽出する", async () => {
+    const fetchMock = stubFetchJson({
+      id: "database-id",
+      url: "https://notion.so/database-id",
+      last_edited_time: "2026-04-19T03:00:00.000Z",
+      title: [
+        {
+          plain_text: "監視データベース"
+        }
+      ]
+    });
+
+    const snapshot = await fetchNotionDatabaseSnapshot(notionDatabaseSource);
+
+    expect(snapshot).toEqual({
+      kind: "version",
+      version: "2026-04-19T03:00:00.000Z",
+      title: "監視データベース が更新されました",
+      url: "https://notion.so/database-id",
+      timestamp: "2026-04-19T03:00:00.000Z"
+    });
+
+    const firstCall = fetchMock.mock.calls[0];
+    expect(firstCall).toBeDefined();
+    if (!firstCall) {
+      throw new Error("fetch が呼び出されていません");
+    }
+
+    const [url, init] = firstCall;
+    expect(url).toBe("https://api.notion.com/v1/databases/11111111111111111111111111111111");
+    if (!init || init.headers instanceof Headers || Array.isArray(init.headers)) {
+      throw new Error("fetch headers を検証できません");
+    }
+    expect(init.headers).toMatchObject({
+      Authorization: "Bearer secret_test_token",
+      "Notion-Version": "2022-06-28"
+    });
+  });
+
+  it("database title がない場合は source label を使う", async () => {
+    stubFetchJson({
+      last_edited_time: "2026-04-19T03:00:00.000Z"
+    });
+
+    const snapshot = await fetchNotionDatabaseSnapshot(notionDatabaseSource);
+
+    expect(snapshot.title).toBe("Database Label が更新されました");
+  });
+
+  it("404 を databaseId 確認エラーとして説明する", async () => {
+    stubFetchText("not found", 404);
+
+    await expect(fetchNotionDatabaseSnapshot(notionDatabaseSource)).rejects.toThrow(
+      "Notion API でデータベースが見つかりません"
     );
   });
 });
