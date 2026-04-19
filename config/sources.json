@@ -101,7 +101,7 @@
     "key": "notion-kirinlog-page",
     "type": "notion_api_page_poll",
     "label": "キリン寄合ログ",
-    "pageId": "2192748f09178184ba9dec57ef1a7a65",
+    "pageId": "2da2748f091781d59db4d7b0afac5a3b",
     "notionTokenEnvName": "NOTION_TOKEN_MAIN",
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
     "enabled": true

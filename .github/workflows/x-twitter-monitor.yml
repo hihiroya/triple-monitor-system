@@ -74,26 +74,10 @@ jobs:
         id: monitor
         env:
           DISCORD_WEBHOOK_URL_MAIN: ${{ secrets.DISCORD_WEBHOOK_URL_MAIN }}
-        run: |
-          set +e
-          npm run monitor:x-twitter
-          exit_code=$?
-          echo "exit_code=${exit_code}" >> "$GITHUB_OUTPUT"
-          exit 0
+        run: npm run monitor:x-twitter
 
       - name: Commit state
+        if: always() && steps.monitor.outcome != 'skipped'
         uses: ./.github/actions/commit-monitor-state
         with:
           commit-message: Update X Twitter monitor state
-
-      - name: Propagate monitor failure
-        if: steps.monitor.outputs.exit_code != '0'
-        env:
-          EXIT_CODE: ${{ steps.monitor.outputs.exit_code }}
-        run: |
-          if [[ "${EXIT_CODE}" =~ ^[0-9]+$ ]] && [ "${EXIT_CODE}" -ge 0 ] && [ "${EXIT_CODE}" -le 255 ]; then
-            exit "${EXIT_CODE}"
-          fi
-
-          echo "Invalid monitor exit code: ${EXIT_CODE}"
-          exit 1

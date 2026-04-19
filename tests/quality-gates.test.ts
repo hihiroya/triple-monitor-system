@@ -94,9 +94,10 @@ describe("quality gate helpers", () => {
 
     for (const workflowPath of workflowPaths) {
       const workflow = await readFile(workflowPath, "utf8");
+      expect(workflow).not.toContain("- name: Propagate monitor failure");
       expect(workflow).not.toContain('exit "${{ steps.monitor.outputs.exit_code }}"');
-      expect(workflow).toContain("EXIT_CODE: ${{ steps.monitor.outputs.exit_code }}");
-      expect(workflow).toContain("Invalid monitor exit code");
+      expect(workflow).not.toContain("EXIT_CODE: ${{ steps.monitor.outputs.exit_code }}");
+      expect(workflow).toContain("if: always() && steps.monitor.outcome != 'skipped'");
     }
   });
 
@@ -104,15 +105,14 @@ describe("quality gate helpers", () => {
     const workflow = await readFile(".github/workflows/notion-monitor.yml", "utf8");
     const checkSecretsIndex = workflow.indexOf("- name: Check Notion monitor secrets");
     const runMonitorIndex = workflow.indexOf("- name: Run Notion monitor");
-    const propagateFailureIndex = workflow.indexOf("- name: Propagate monitor failure");
+    const commitStateIndex = workflow.indexOf("- name: Commit state");
 
     expect(checkSecretsIndex).toBeGreaterThan(-1);
     expect(runMonitorIndex).toBeGreaterThan(checkSecretsIndex);
-    expect(propagateFailureIndex).toBeGreaterThan(runMonitorIndex);
+    expect(commitStateIndex).toBeGreaterThan(runMonitorIndex);
     expect(workflow).toContain("Missing required secrets");
     expect(workflow).toContain("DISCORD_WEBHOOK_URL_MAIN");
     expect(workflow).toContain("NOTION_TOKEN_MAIN");
-    expect(workflow).toContain("GITHUB_STEP_SUMMARY");
   });
 
   it("X/Twitter RSS source は Actions 内の RSSHub だけを参照する", async () => {
