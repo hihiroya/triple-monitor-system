@@ -1,0 +1,45 @@
+{
+  "name": "triple-monitor-system",
+  "version": "1.0.0",
+  "description": "GitHub Actions based monitor system for RSS, Notion pages, and public HTML lists.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.typecheck.json --noEmit",
+    "check": "npm run typecheck && npm run build && npm run validate:config && npm run lint && npm run knip && npm run test:coverage && npm run format:check",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "knip": "knip",
+    "audit": "npm audit",
+    "format": "prettier . --write",
+    "format:check": "prettier . --check",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "validate:config": "node dist/validate-config.js",
+    "start": "node dist/main.js",
+    "monitor:rss": "node dist/main.js --type rss",
+    "monitor:rss:standard": "node dist/main.js --type rss --group standard-rss",
+    "monitor:x-twitter": "node dist/main.js --type rss --group x-twitter",
+    "monitor:notion": "node dist/main.js --type notion_api_page_poll",
+    "monitor:public-html": "node dist/main.js --type public_html_list_poll"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "cheerio": "^1.2.0",
+    "fast-xml-parser": "^5.7.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.12.2",
+    "@vitest/coverage-v8": "^4.1.4",
+    "eslint": "^10.2.1",
+    "globals": "^17.5.0",
+    "knip": "^6.4.1",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.58.2",
+    "vitest": "^4.1.4"
+  }
+}

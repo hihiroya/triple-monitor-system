@@ -1,0 +1,119 @@
+[
+  {
+    "key": "society-of-starlight-youtube",
+    "type": "rss",
+    "label": "スタァライト学会Youtubeチャンネル",
+    "rssUrl": "https://www.youtube.com/feeds/videos.xml?channel_id=UCqKm7Ux0slXFK8mglrjqDwg",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
+    "enabled": true,
+    "group": "standard-rss",
+    "maxItems": 10
+  },
+  {
+    "key": "revuestarlight-youtube",
+    "type": "rss",
+    "label": "スタァライトチャンネル",
+    "rssUrl": "https://www.youtube.com/feeds/videos.xml?channel_id=UCpcs9GP_NIBxzDfNTWolNPw",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
+    "enabled": true,
+    "group": "standard-rss",
+    "maxItems": 10
+  },
+  {
+    "key": "society-of-starlight",
+    "type": "rss",
+    "label": "スタァライト学会",
+    "rssUrl": "https://society-of-starlight.com/feed/",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
+    "enabled": true,
+    "group": "standard-rss",
+    "maxItems": 10
+  },
+  {
+    "key": "Starlight_Soc",
+    "type": "rss",
+    "label": "スタァライト学会 事務局",
+    "rssUrl": "http://127.0.0.1:1200/twitter/user/Starlight_Soc",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
+    "enabled": true,
+    "group": "x-twitter",
+    "maxItems": 10
+  },
+  {
+    "key": "starlight_9thEX",
+    "type": "rss",
+    "label": "少女☆歌劇 レヴュースタァライト 9th Anniversary EXHIBITION",
+    "rssUrl": "http://127.0.0.1:1200/twitter/user/starlight_9thEX",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
+    "enabled": true,
+    "group": "x-twitter",
+    "maxItems": 10
+  },
+  {
+    "key": "revuestarlight",
+    "type": "rss",
+    "label": "少女☆歌劇 レヴュースタァライト",
+    "rssUrl": "http://127.0.0.1:1200/twitter/user/revuestarlight",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
+    "enabled": true,
+    "group": "x-twitter",
+    "maxItems": 10
+  },
+  {
+    "key": "Sf_classdiary",
+    "type": "rss",
+    "label": "クイナの学級日誌",
+    "rssUrl": "http://127.0.0.1:1200/twitter/user/Sf_classdiary",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
+    "enabled": true,
+    "group": "x-twitter",
+    "maxItems": 10
+  },
+  {
+    "key": "Siegfeldchutobu",
+    "type": "rss",
+    "label": "シークフェルト音楽学院中等部スタッフ",
+    "rssUrl": "http://127.0.0.1:1200/twitter/user/Siegfeldchutobu",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
+    "enabled": true,
+    "group": "x-twitter",
+    "maxItems": 10
+  },
+  {
+    "key": "notion-top-page",
+    "type": "notion_api_page_poll",
+    "label": "スタァライト学会Wiki",
+    "pageId": "2192748f091781ebab20c46d12e324b2",
+    "notionTokenEnvName": "NOTION_TOKEN_MAIN",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
+    "enabled": true
+  },
+  {
+    "key": "notion-database-page",
+    "type": "notion_api_page_poll",
+    "label": "スタァライト学会データベース",
+    "pageId": "2192748f09178184ba9dec57ef1a7a65",
+    "notionTokenEnvName": "NOTION_TOKEN_MAIN",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
+    "enabled": true
+  },
+  {
+    "key": "notion-kirinlog-page",
+    "type": "notion_api_page_poll",
+    "label": "キリン寄合ログ",
+    "pageId": "2192748f09178184ba9dec57ef1a7a65",
+    "notionTokenEnvName": "NOTION_TOKEN_MAIN",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
+    "enabled": true
+  },
+  {
+    "key": "revuestarlight-news",
+    "type": "public_html_list_poll",
+    "label": "スタァライト公式ニュース",
+    "url": "https://revuestarlight.com/news/",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
+    "enabled": true,
+    "maxItems": 10,
+    "selectorStrategy": "revuestarlight_news_list"
+  }
+]

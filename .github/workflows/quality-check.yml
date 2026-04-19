@@ -1,0 +1,70 @@
+name: Quality Check
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Scan secrets
+        # gitleaks/gitleaks-action v2.3.9。third-party action は supply-chain リスクを下げるため SHA 固定する。
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+          GITLEAKS_ENABLE_COMMENTS: "false"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build
+        run: npm run build
+
+      - name: Validate config and state
+        run: npm run validate:config
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Check unused exports and dependencies
+        run: npm run knip
+
+      - name: Audit dependencies
+        run: npm run audit
+
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint GitHub Actions workflows
+        uses: rhysd/actionlint@914e7df21a07ef503a81201c76d2b11c789d3fca

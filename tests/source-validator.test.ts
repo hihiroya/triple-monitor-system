@@ -1,0 +1,184 @@
+import { describe, expect, it } from "vitest";
+import { validateSources } from "../src/source-validator.js";
+
+describe("validateSources", () => {
+  it("RSS、Notion、公開HTMLの有効な設定を検証して正規化する", () => {
+    const sources = validateSources([
+      {
+        key: "rss-main",
+        type: "rss",
+        label: "RSS",
+        rssUrl: "https://example.com/feed.xml",
+        webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+        enabled: true,
+        group: "standard-rss",
+        maxItems: 10
+      },
+      {
+        key: "notion-main",
+        type: "notion_api_page_poll",
+        label: "Notion",
+        pageId: "00000000-0000-0000-0000-000000000000",
+        notionTokenEnvName: "NOTION_TOKEN_MAIN",
+        webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+        enabled: false
+      },
+      {
+        key: "html-main",
+        type: "public_html_list_poll",
+        label: "HTML",
+        url: "https://example.com/news/",
+        webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+        enabled: true,
+        selectorStrategy: "revuestarlight_news_list",
+        maxItems: 20
+      }
+    ]);
+
+    expect(sources).toHaveLength(3);
+    expect(sources[0]).toMatchObject({
+      key: "rss-main",
+      type: "rss",
+      rssUrl: "https://example.com/feed.xml",
+      group: "standard-rss"
+    });
+    expect(sources[1]).toMatchObject({
+      key: "notion-main",
+      type: "notion_api_page_poll",
+      pageId: "00000000000000000000000000000000"
+    });
+    expect(sources[2]).toMatchObject({
+      key: "html-main",
+      type: "public_html_list_poll",
+      url: "https://example.com/news/",
+      selectorStrategy: "revuestarlight_news_list"
+    });
+  });
+
+  it("トップレベルが配列でない設定を拒否する", () => {
+    expect(() => validateSources({ key: "rss-main" })).toThrow(
+      "sources.json のトップレベルは配列である必要があります"
+    );
+  });
+
+  it("source key の重複を拒否する", () => {
+    const source = {
+      key: "duplicated",
+      type: "rss",
+      label: "RSS",
+      rssUrl: "https://example.com/feed.xml",
+      webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+      enabled: true
+    };
+
+    expect(() => validateSources([source, source])).toThrow("source key が重複しています");
+  });
+
+  it("未対応の source type を拒否する", () => {
+    expect(() =>
+      validateSources([
+        {
+          key: "unknown",
+          type: "unknown",
+          label: "Unknown",
+          webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+          enabled: true
+        }
+      ])
+    ).toThrow("未対応の source type です");
+  });
+
+  it("HTTP(S) 以外の URL を拒否する", () => {
+    expect(() =>
+      validateSources([
+        {
+          key: "rss-main",
+          type: "rss",
+          label: "RSS",
+          rssUrl: "file:///etc/passwd",
+          webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+          enabled: true
+        }
+      ])
+    ).toThrow("rssUrl は http または https URL である必要があります");
+  });
+
+  it("GitHub Secrets に不向きな環境変数名を拒否する", () => {
+    expect(() =>
+      validateSources([
+        {
+          key: "rss-main",
+          type: "rss",
+          label: "RSS",
+          rssUrl: "https://example.com/feed.xml",
+          webhookEnvName: "discordWebhook",
+          enabled: true
+        }
+      ])
+    ).toThrow("webhookEnvName は GitHub Secrets に使いやすい");
+  });
+
+  it("不正な group 名を拒否する", () => {
+    expect(() =>
+      validateSources([
+        {
+          key: "rss-main",
+          type: "rss",
+          label: "RSS",
+          rssUrl: "https://example.com/feed.xml",
+          webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+          enabled: true,
+          group: "Invalid Group"
+        }
+      ])
+    ).toThrow("group は小文字英数字");
+  });
+
+  it("許可されていない selectorStrategy を拒否する", () => {
+    expect(() =>
+      validateSources([
+        {
+          key: "html-main",
+          type: "public_html_list_poll",
+          label: "HTML",
+          url: "https://example.com/news/",
+          webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+          enabled: true,
+          selectorStrategy: "free_form_selector"
+        }
+      ])
+    ).toThrow("未許可の selectorStrategy です");
+  });
+
+  it("不正な Notion pageId を拒否する", () => {
+    expect(() =>
+      validateSources([
+        {
+          key: "notion-main",
+          type: "notion_api_page_poll",
+          label: "Notion",
+          pageId: "invalid",
+          notionTokenEnvName: "NOTION_TOKEN_MAIN",
+          webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+          enabled: true
+        }
+      ])
+    ).toThrow("pageId は 32 桁の Notion page ID である必要があります");
+  });
+
+  it("範囲外の maxItems を拒否する", () => {
+    expect(() =>
+      validateSources([
+        {
+          key: "rss-main",
+          type: "rss",
+          label: "RSS",
+          rssUrl: "https://example.com/feed.xml",
+          webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+          enabled: true,
+          maxItems: 101
+        }
+      ])
+    ).toThrow("maxItems は 1 以上 100 以下の整数である必要があります");
+  });
+});

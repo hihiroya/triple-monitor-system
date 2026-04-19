@@ -1,0 +1,40 @@
+name: Commit monitor state
+description: Commit and push monitor-state.json when it changed.
+
+inputs:
+  commit-message:
+    description: Commit message for monitor state updates.
+    required: true
+  state-path:
+    description: Path to the monitor state file.
+    required: false
+    default: state/monitor-state.json
+
+runs:
+  using: composite
+  steps:
+    - name: Commit and push state
+      shell: bash
+      run: |
+        state_path="${{ inputs.state-path }}"
+        if git diff --quiet -- "${state_path}"; then
+          echo "No state changes."
+          exit 0
+        fi
+
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add "${state_path}"
+        git commit -m "${{ inputs.commit-message }}"
+
+        for attempt in 1 2 3; do
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          if git push; then
+            exit 0
+          fi
+          echo "Push failed. Retrying ${attempt}/3..."
+          sleep 2
+        done
+
+        echo "Failed to push state after retries."
+        exit 1
