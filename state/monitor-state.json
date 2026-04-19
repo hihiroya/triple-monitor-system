@@ -8,6 +8,21 @@
     },
     "notion-top-page": {
       "lastSeenVersion": "2026-04-19T05:43:00.000Z"
+    },
+    "revuestarlight-news": {
+      "lastSeenItemId": "https://revuestarlight.com/news/category/animation/",
+      "seenItemIds": [
+        "https://revuestarlight.com/news/category/animation/",
+        "https://revuestarlight.com/news/category/book/",
+        "https://revuestarlight.com/news/category/event/",
+        "https://revuestarlight.com/news/category/game/",
+        "https://revuestarlight.com/news/category/goods/",
+        "https://revuestarlight.com/news/category/live/",
+        "https://revuestarlight.com/news/category/media/",
+        "https://revuestarlight.com/news/category/music/",
+        "https://revuestarlight.com/news/category/musical/",
+        "https://revuestarlight.com/news/category/uncategorized/"
+      ]
     }
   }
 }
