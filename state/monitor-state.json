@@ -23,6 +23,47 @@
         "https://revuestarlight.com/news/category/musical/",
         "https://revuestarlight.com/news/category/uncategorized/"
       ]
+    },
+    "society-of-starlight-youtube": {
+      "lastSeenItemId": "https://www.youtube.com/watch?v=QXN-P36gy_k",
+      "seenItemIds": [
+        "https://www.youtube.com/watch?v=QXN-P36gy_k",
+        "https://www.youtube.com/watch?v=NOceAeS4bms",
+        "https://www.youtube.com/watch?v=lqVHU4ioMFc",
+        "https://www.youtube.com/watch?v=wBxYRFW-Ad8",
+        "https://www.youtube.com/watch?v=Ef37WZOH440",
+        "https://www.youtube.com/watch?v=mDkRY1oAJrs",
+        "https://www.youtube.com/watch?v=Hoq-lWX6NpE",
+        "https://www.youtube.com/watch?v=qZFqzhDlGvU",
+        "https://www.youtube.com/watch?v=9rivRLfDOnY",
+        "https://www.youtube.com/watch?v=aXwvKqiJBzU"
+      ]
+    },
+    "revuestarlight-youtube": {
+      "lastSeenItemId": "https://www.youtube.com/watch?v=NYQgzeQdgj8",
+      "seenItemIds": [
+        "https://www.youtube.com/watch?v=NYQgzeQdgj8",
+        "https://www.youtube.com/watch?v=TwbVb_YZbig",
+        "https://www.youtube.com/watch?v=7M6YUlbkA0E",
+        "https://www.youtube.com/watch?v=VEMTvAQTSQE",
+        "https://www.youtube.com/watch?v=NZoKdCRuu30",
+        "https://www.youtube.com/watch?v=m1IVuYU2iuw",
+        "https://www.youtube.com/watch?v=oWvlUFDKx2E",
+        "https://www.youtube.com/watch?v=P1dk2A8YMCU",
+        "https://www.youtube.com/watch?v=AsHTt54tUCo",
+        "https://www.youtube.com/watch?v=ScbtJ4SuWqE"
+      ]
+    },
+    "society-of-starlight": {
+      "lastSeenItemId": "https://society-of-starlight.com/2025%e5%b9%b411%e6%9c%888%e6%97%a5%e5%9c%9f-%e7%ac%ac3%e5%9b%9e%e5%a4%a7%e4%bc%9a-%e5%8f%82%e5%8a%a0%e7%94%b3%e3%81%97%e8%be%bc%e3%81%bf%e9%96%8b%e5%a7%8b/",
+      "seenItemIds": [
+        "https://society-of-starlight.com/2025%e5%b9%b411%e6%9c%888%e6%97%a5%e5%9c%9f-%e7%ac%ac3%e5%9b%9e%e5%a4%a7%e4%bc%9a-%e5%8f%82%e5%8a%a0%e7%94%b3%e3%81%97%e8%be%bc%e3%81%bf%e9%96%8b%e5%a7%8b/",
+        "https://society-of-starlight.com/%e3%82%ad%e3%83%aa%e3%83%b3%e5%af%84%e5%90%88%e3%82%b9%e3%83%9a%e3%83%bc%e3%82%b9%e9%96%8b%e5%82%ac%e3%81%ae%e3%81%8a%e7%9f%a5%e3%82%89%e3%81%9b/",
+        "https://society-of-starlight.com/new-4/",
+        "https://society-of-starlight.com/news-3/",
+        "https://society-of-starlight.com/%e7%ac%ac2%e5%9b%9e%e5%a4%a7%e4%bc%9a%e5%8f%82%e5%8a%a0%e7%94%b3%e3%81%97%e8%be%bc%e3%81%bf/",
+        "https://society-of-starlight.com/%e5%ad%a6%e4%bc%9a%e5%85%ac%e5%bc%8f%e3%82%b5%e3%82%a4%e3%83%88%e3%82%aa%e3%83%bc%e3%83%97%e3%83%b3%ef%bc%81/"
+      ]
     }
   }
 }
