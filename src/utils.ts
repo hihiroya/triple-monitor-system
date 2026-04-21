@@ -1,4 +1,5 @@
 const DEFAULT_TIMEOUT_MS = 20_000;
+const ERROR_BODY_PREVIEW_LIMIT = 2_000;
 
 /**
  * unknown の例外値をログ用の文字列に変換する。
@@ -77,7 +78,8 @@ export async function fetchText(url: string, init: RequestInit = {}): Promise<st
   const response = await fetchWithTimeout(url, init);
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    const detail = body ? ` body=${body.slice(0, 300)}` : "";
+    const bodyPreview = normalizeWhitespace(body).slice(0, ERROR_BODY_PREVIEW_LIMIT);
+    const detail = bodyPreview ? ` body=${bodyPreview}` : "";
     throw new Error(`HTTPエラー: ${response.status} ${response.statusText} url=${url}${detail}`);
   }
   return response.text();

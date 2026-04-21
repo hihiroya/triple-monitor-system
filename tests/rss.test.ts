@@ -93,6 +93,12 @@ describe("fetchRssSnapshot", () => {
     await expect(fetchRssSnapshot(rssSource)).rejects.toThrow("HTTPエラー: 500");
   });
 
+  it("HTTP エラー body の長い詳細も失敗メッセージに含める", async () => {
+    stubFetch(`<html>${"x".repeat(350)}RSSHub detail after long html</html>`, 503);
+
+    await expect(fetchRssSnapshot(rssSource)).rejects.toThrow("RSSHub detail after long html");
+  });
+
   it("有効な item が抽出できない RSS を失敗にする", async () => {
     stubFetch(`<?xml version="1.0"?>
       <rss>
