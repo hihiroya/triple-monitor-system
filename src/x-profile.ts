@@ -14,6 +14,10 @@ const GQL_ENDPOINTS = {
   userTweetsAndReplies:
     process.env.X_GQL_USER_TWEETS_AND_REPLIES ?? "Yt1JzwcBsBWYEEi3jMTe2Q/UserTweetsAndReplies"
 };
+const GQL_OPERATION_NAMES = {
+  userByScreenName: "UserByScreenName",
+  userTweetsAndReplies: "UserTweetsAndReplies"
+} as const;
 
 const USER_FEATURES = {
   hidden_profile_subscriptions_enabled: true,
@@ -59,6 +63,7 @@ const TIMELINE_FEATURES = {
 interface XAuth {
   cookie: string;
   csrfToken: string;
+  html: string;
 }
 
 interface XUser {
@@ -128,7 +133,8 @@ async function buildXAuth(source: XProfileSource): Promise<XAuth> {
   if (initialCookies.has("ct0")) {
     return {
       cookie: initialCookie,
-      csrfToken: initialCookies.get("ct0") ?? ""
+      csrfToken: initialCookies.get("ct0") ?? "",
+      html: ""
     };
   }
 
@@ -138,15 +144,17 @@ async function buildXAuth(source: XProfileSource): Promise<XAuth> {
       "User-Agent": "triple-monitor-system/1.0 X profile monitor"
     }
   });
+  const html = await response.text();
   const cookie = mergeSetCookies(initialCookie, getSetCookieHeaders(response.headers));
   const csrfToken = parseCookieHeader(cookie).get("ct0");
   if (!csrfToken) {
     throw new Error("X profile monitor could not obtain ct0 cookie from auth_token");
   }
-  return { cookie, csrfToken };
+  return { cookie, csrfToken, html };
 }
 
 async function fetchXJson(
+  operationName: string,
   endpoint: string,
   params: Record<string, unknown>,
   auth: XAuth
@@ -176,10 +184,105 @@ async function fetchXJson(
   const body = await response.text();
   if (!response.ok) {
     throw new Error(
-      `X Web API error: status=${response.status} body=${normalizeWhitespace(body).slice(0, 500)}`
+      `X Web API error: operation=${operationName} endpoint=${endpoint} status=${
+        response.status
+      } body=${normalizeWhitespace(body).slice(0, 500)}`
     );
   }
   return JSON.parse(body) as unknown;
+}
+
+function extractScriptUrls(html: string): string[] {
+  const urls = new Set<string>();
+  const pattern = /<script[^>]+src=["']([^"']+)["']/gi;
+  for (const match of html.matchAll(pattern)) {
+    const src = match[1];
+    if (!src || !src.includes("/responsive-web/")) {
+      continue;
+    }
+    try {
+      urls.add(new URL(src, X_HOME_URL).toString());
+    } catch {
+      // Ignore malformed script URLs from X markup.
+    }
+  }
+  return Array.from(urls);
+}
+
+function findEndpointInScript(script: string, operationName: string): string | undefined {
+  const escapedName = operationName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const patterns = [
+    new RegExp(`["']([A-Za-z0-9_-]{10,})/${escapedName}["']`),
+    new RegExp(`queryId["']?\\s*[:=]\\s*["']([A-Za-z0-9_-]{10,})["'][^]{0,300}${escapedName}`),
+    new RegExp(`${escapedName}[^]{0,300}queryId["']?\\s*[:=]\\s*["']([A-Za-z0-9_-]{10,})["']`)
+  ];
+  for (const pattern of patterns) {
+    const match = script.match(pattern);
+    if (match?.[1]) {
+      return `${match[1]}/${operationName}`;
+    }
+  }
+  return undefined;
+}
+
+async function resolveEndpointFromScripts(
+  operationName: string,
+  auth: XAuth,
+  screenName: string
+): Promise<string | undefined> {
+  const html =
+    auth.html ||
+    (await fetchTextWithAuth(`${X_HOME_URL}/${screenName}?mx=2`, auth).catch(() => ""));
+  const scriptUrls = extractScriptUrls(html).slice(0, 25);
+  for (const scriptUrl of scriptUrls) {
+    const response = await fetchWithTimeout(scriptUrl, {
+      headers: {
+        Cookie: auth.cookie,
+        "User-Agent": "triple-monitor-system/1.0 X profile monitor"
+      }
+    }).catch(() => undefined);
+    if (!response?.ok) {
+      continue;
+    }
+    const endpoint = findEndpointInScript(await response.text(), operationName);
+    if (endpoint) {
+      return endpoint;
+    }
+  }
+  return undefined;
+}
+
+async function fetchTextWithAuth(url: string, auth: XAuth): Promise<string> {
+  const response = await fetchWithTimeout(url, {
+    headers: {
+      Cookie: auth.cookie,
+      "User-Agent": "triple-monitor-system/1.0 X profile monitor"
+    }
+  });
+  return response.ok ? response.text() : "";
+}
+
+async function fetchXJsonWithEndpointFallback(
+  operationName: keyof typeof GQL_ENDPOINTS,
+  params: Record<string, unknown>,
+  auth: XAuth,
+  screenName: string
+): Promise<unknown> {
+  const endpoint = GQL_ENDPOINTS[operationName];
+  const gqlOperationName = GQL_OPERATION_NAMES[operationName];
+  try {
+    return await fetchXJson(gqlOperationName, endpoint, params, auth);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!message.includes("status=404")) {
+      throw error;
+    }
+    const resolvedEndpoint = await resolveEndpointFromScripts(gqlOperationName, auth, screenName);
+    if (!resolvedEndpoint || resolvedEndpoint === endpoint) {
+      throw error;
+    }
+    return fetchXJson(gqlOperationName, resolvedEndpoint, params, auth);
+  }
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
@@ -324,8 +427,8 @@ export async function fetchXProfileSnapshot(source: XProfileSource): Promise<Lis
   const cutoffTime = Date.now() - maxAgeHours * 60 * 60 * 1000;
   const auth = await buildXAuth(source);
 
-  const userResponse = await fetchXJson(
-    GQL_ENDPOINTS.userByScreenName,
+  const userResponse = await fetchXJsonWithEndpointFallback(
+    "userByScreenName",
     {
       variables: {
         screen_name: source.screenName,
@@ -336,12 +439,13 @@ export async function fetchXProfileSnapshot(source: XProfileSource): Promise<Lis
         withAuxiliaryUserLabels: false
       }
     },
-    auth
+    auth,
+    source.screenName
   );
   const user = extractUser(userResponse, source.screenName);
 
-  const timelineResponse = await fetchXJson(
-    GQL_ENDPOINTS.userTweetsAndReplies,
+  const timelineResponse = await fetchXJsonWithEndpointFallback(
+    "userTweetsAndReplies",
     {
       variables: {
         userId: user.id,
@@ -356,7 +460,8 @@ export async function fetchXProfileSnapshot(source: XProfileSource): Promise<Lis
         withArticlePlainText: false
       }
     },
-    auth
+    auth,
+    source.screenName
   );
 
   const seen = new Set<string>();
