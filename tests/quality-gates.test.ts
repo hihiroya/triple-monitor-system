@@ -91,6 +91,7 @@ describe("quality gate helpers", () => {
   it("monitor workflow は GitHub expression を exit に直接渡さない", async () => {
     const workflowPaths = [
       ".github/workflows/rss-monitor.yml",
+      ".github/workflows/x-profile-monitor.yml",
       ".github/workflows/notion-monitor.yml",
       ".github/workflows/public-site-monitor.yml",
       ".github/workflows/x-twitter-monitor.yml"
@@ -103,6 +104,22 @@ describe("quality gate helpers", () => {
       expect(workflow).not.toContain("EXIT_CODE: ${{ steps.monitor.outputs.exit_code }}");
       expect(workflow).toContain("if: always() && steps.monitor.outcome != 'skipped'");
     }
+  });
+
+  it("x-profile-monitor.yml は手動実行だけで X profile 監視を検証する", async () => {
+    const workflow = await readFile(".github/workflows/x-profile-monitor.yml", "utf8");
+    const checkSecretsIndex = workflow.indexOf("- name: Check X profile monitor secrets");
+    const runMonitorIndex = workflow.indexOf("- name: Run X profile monitor");
+    const commitStateIndex = workflow.indexOf("- name: Commit state");
+
+    expect(workflow).toContain("workflow_dispatch:");
+    expect(workflow).not.toContain("schedule:");
+    expect(workflow).toContain("TWITTER_AUTH_TOKEN");
+    expect(workflow).toContain("DISCORD_WEBHOOK_URL_MAIN");
+    expect(workflow).toContain("npm run monitor:x-profile:experimental");
+    expect(checkSecretsIndex).toBeGreaterThan(-1);
+    expect(runMonitorIndex).toBeGreaterThan(checkSecretsIndex);
+    expect(commitStateIndex).toBeGreaterThan(runMonitorIndex);
   });
 
   it("notion-monitor.yml は Notion 監視前に必要な secret を検査する", async () => {

@@ -2,6 +2,7 @@ import { notifyDiscord } from "./discord.js";
 import { fetchNotionDatabaseSnapshot, fetchNotionPageSnapshot } from "./notion.js";
 import { fetchPublicHtmlSnapshot } from "./public-html.js";
 import { fetchRssSnapshot } from "./rss.js";
+import { fetchXProfileSnapshot } from "./x-profile.js";
 import { logger } from "./logger.js";
 import type {
   MonitorItem,
@@ -22,6 +23,9 @@ const SEEN_ITEM_HISTORY_LIMIT = 50;
 async function fetchSnapshot(source: MonitorSource): Promise<SourceSnapshot> {
   if (source.type === "rss") {
     return fetchRssSnapshot(source);
+  }
+  if (source.type === "x_profile_poll") {
+    return fetchXProfileSnapshot(source);
   }
   if (source.type === "notion_api_page_poll") {
     return fetchNotionPageSnapshot(source);

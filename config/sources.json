@@ -60,6 +60,18 @@
     "maxItems": 50
   },
   {
+    "key": "revuestarlight-x-profile",
+    "type": "x_profile_poll",
+    "label": "少女☆歌劇 レヴュースタァライト X Profile",
+    "screenName": "revuestarlight",
+    "xAuthTokenEnvName": "TWITTER_AUTH_TOKEN",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
+    "enabled": true,
+    "group": "x-profile-experimental",
+    "maxItems": 20,
+    "maxAgeHours": 72
+  },
+  {
     "key": "Sf_classdiary",
     "type": "rss",
     "label": "クイナの学級日誌",

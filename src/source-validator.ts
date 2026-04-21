@@ -4,11 +4,13 @@ import type {
   PublicHtmlListSource,
   RssSource,
   SelectorStrategyName,
-  SourceType
+  SourceType,
+  XProfileSource
 } from "./types.js";
 
 const SOURCE_TYPES: readonly SourceType[] = [
   "rss",
+  "x_profile_poll",
   "notion_api_page_poll",
   "notion_api_database_poll",
   "public_html_list_poll"
@@ -91,6 +93,25 @@ function optionalMaxItems(record: Record<string, unknown>): number | undefined {
   return value;
 }
 
+function optionalMaxAgeHours(record: Record<string, unknown>): number | undefined {
+  const value = record.maxAgeHours;
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 1 || value > 168) {
+    throw new Error("maxAgeHours は 1 以上 168 以下の整数である必要があります");
+  }
+  return value;
+}
+
+function requireScreenName(record: Record<string, unknown>): string {
+  const value = requireString(record, "screenName");
+  if (!/^[A-Za-z0-9_]{1,15}$/.test(value)) {
+    throw new Error("screenName は X/Twitter の screen name 形式で指定してください");
+  }
+  return value;
+}
+
 /**
  * sources.json の外部入力を MonitorSource 配列へ検証・正規化する。
  *
@@ -140,6 +161,19 @@ function validateSource(value: unknown, index: number, seenKeys: Set<string>): M
     };
     const maxItems = optionalMaxItems(value);
     return maxItems === undefined ? source : { ...source, maxItems };
+  }
+
+  if (commonWithGroup.type === "x_profile_poll") {
+    const source: XProfileSource = {
+      ...commonWithGroup,
+      type: "x_profile_poll",
+      screenName: requireScreenName(value),
+      xAuthTokenEnvName: requireEnvName(value, "xAuthTokenEnvName")
+    };
+    const maxItems = optionalMaxItems(value);
+    const withMaxItems = maxItems === undefined ? source : { ...source, maxItems };
+    const maxAgeHours = optionalMaxAgeHours(value);
+    return maxAgeHours === undefined ? withMaxItems : { ...withMaxItems, maxAgeHours };
   }
 
   if (commonWithGroup.type === "notion_api_page_poll") {

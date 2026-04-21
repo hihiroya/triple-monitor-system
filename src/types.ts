@@ -1,5 +1,6 @@
 export type SourceType =
   | "rss"
+  | "x_profile_poll"
   | "notion_api_page_poll"
   | "notion_api_database_poll"
   | "public_html_list_poll";
@@ -17,6 +18,14 @@ export interface RssSource extends BaseSource {
   type: "rss";
   rssUrl: string;
   maxItems?: number;
+}
+
+export interface XProfileSource extends BaseSource {
+  type: "x_profile_poll";
+  screenName: string;
+  xAuthTokenEnvName: string;
+  maxItems?: number;
+  maxAgeHours?: number;
 }
 
 export interface NotionPageSource extends BaseSource {
@@ -42,6 +51,7 @@ export interface PublicHtmlListSource extends BaseSource {
 
 export type MonitorSource =
   | RssSource
+  | XProfileSource
   | NotionPageSource
   | NotionDatabaseSource
   | PublicHtmlListSource;
