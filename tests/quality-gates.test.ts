@@ -106,17 +106,18 @@ describe("quality gate helpers", () => {
     }
   });
 
-  it("x-profile-monitor.yml は手動実行だけで X profile 監視を検証する", async () => {
+  it("x-profile-monitor.yml は X profile 監視を定期実行する", async () => {
     const workflow = await readFile(".github/workflows/x-profile-monitor.yml", "utf8");
     const checkSecretsIndex = workflow.indexOf("- name: Check X profile monitor secrets");
     const runMonitorIndex = workflow.indexOf("- name: Run X profile monitor");
     const commitStateIndex = workflow.indexOf("- name: Commit state");
 
     expect(workflow).toContain("workflow_dispatch:");
-    expect(workflow).not.toContain("schedule:");
+    expect(workflow).toContain("schedule:");
+    expect(workflow).toContain('cron: "5,35 * * * *"');
     expect(workflow).toContain("TWITTER_AUTH_TOKEN");
     expect(workflow).toContain("DISCORD_WEBHOOK_URL_MAIN");
-    expect(workflow).toContain("npm run monitor:x-profile:experimental");
+    expect(workflow).toContain("npm run monitor:x-profile");
     expect(checkSecretsIndex).toBeGreaterThan(-1);
     expect(runMonitorIndex).toBeGreaterThan(checkSecretsIndex);
     expect(commitStateIndex).toBeGreaterThan(runMonitorIndex);
@@ -141,10 +142,12 @@ describe("quality gate helpers", () => {
     const sources = validateSources(rawSources);
     const twitterSources = sources
       .filter(isRssSource)
+      .filter((source) => source.enabled)
       .filter((source) => isTwitterRssUrl(source.rssUrl));
 
     expect(twitterSources.length).toBeGreaterThan(0);
     for (const source of twitterSources) {
+      expect(source.key).not.toBe("revuestarlight");
       expect(source.group).toBe("x-twitter");
       expect(source.rssUrl).toMatch(
         /^http:\/\/127\.0\.0\.1:1200\/twitter\/(?:user|keyword)\/[^/]+(?:\/[A-Za-z0-9=&_-]+)?$/

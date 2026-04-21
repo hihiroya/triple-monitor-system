@@ -55,7 +55,7 @@
     "label": "少女☆歌劇 レヴュースタァライト",
     "rssUrl": "http://127.0.0.1:1200/twitter/user/revuestarlight",
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
-    "enabled": true,
+    "enabled": false,
     "group": "x-twitter",
     "maxItems": 50
   },
@@ -67,7 +67,7 @@
     "xAuthTokenEnvName": "TWITTER_AUTH_TOKEN",
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
     "enabled": true,
-    "group": "x-profile-experimental",
+    "group": "x-profile",
     "maxItems": 20,
     "maxAgeHours": 72,
     "includeRetweets": true

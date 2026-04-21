@@ -1,6 +1,8 @@
-name: X Profile Monitor Experimental
+name: X Profile Monitor
 
 on:
+  schedule:
+    - cron: "5,35 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -51,7 +53,7 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL_MAIN: ${{ secrets.DISCORD_WEBHOOK_URL_MAIN }}
           TWITTER_AUTH_TOKEN: ${{ secrets.TWITTER_AUTH_TOKEN }}
-        run: npm run monitor:x-profile:experimental
+        run: npm run monitor:x-profile
 
       - name: Commit state
         if: always() && steps.monitor.outcome != 'skipped'
