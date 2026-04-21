@@ -7,6 +7,7 @@ const X_BEARER_TOKEN =
   "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
 
 const DEFAULT_MAX_AGE_HOURS = 72;
+const MIN_TIMELINE_FETCH_COUNT = 50;
 const MAX_DYNAMIC_ENDPOINT_CANDIDATES = 5;
 
 const GQL_OPERATION_NAMES = {
@@ -473,6 +474,14 @@ function tweetToMonitorItem(tweet: XLegacyTweet, user: XUser): MonitorItem {
   return item;
 }
 
+function sortByTimestampDesc(items: MonitorItem[]): MonitorItem[] {
+  return [...items].sort((a, b) => {
+    const timestampA = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+    const timestampB = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+    return timestampB - timestampA;
+  });
+}
+
 /**
  * X profile の Web API から本人の親ポストだけを抽出する。
  *
@@ -505,7 +514,7 @@ export async function fetchXProfileSnapshot(source: XProfileSource): Promise<Lis
   const timelineParams = {
     variables: {
       userId: user.id,
-      count: 20,
+      count: Math.max(maxItems, MIN_TIMELINE_FETCH_COUNT),
       includePromotedContent: false,
       withCommunity: true,
       withVoice: true,
@@ -554,11 +563,12 @@ export async function fetchXProfileSnapshot(source: XProfileSource): Promise<Lis
     }
   }
 
-  if (items.length === 0) {
+  const sortedItems = sortByTimestampDesc(items).slice(0, maxItems);
+  if (sortedItems.length === 0) {
     throw new Error(
       `X profile monitor found no parent posts: screenName=${source.screenName} maxAgeHours=${maxAgeHours}`
     );
   }
 
-  return { kind: "list", items };
+  return { kind: "list", items: sortedItems };
 }

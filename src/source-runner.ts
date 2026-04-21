@@ -215,7 +215,7 @@ async function runListSource(
 
   if (newItems.length === 0) {
     state.sources[source.key] = {
-      lastSeenItemId,
+      lastSeenItemId: latestItem.id,
       seenItemIds: rememberSeenItems(previousSeenItemIds, alreadySeenItemIds)
     };
     return {

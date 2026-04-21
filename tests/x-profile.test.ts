@@ -52,6 +52,15 @@ function tweetEntry(id: string, overrides: Record<string, unknown> = {}): unknow
   };
 }
 
+function expectTimelineFetchCount(fetchMock: FetchMock, callIndex: number, count: number): void {
+  const input = fetchMock.mock.calls[callIndex]?.[0];
+  if (typeof input !== "string") {
+    throw new Error("timeline fetch URL is not a string");
+  }
+  const variables = new URL(input).searchParams.get("variables");
+  expect(variables ? JSON.parse(variables) : undefined).toMatchObject({ count });
+}
+
 function timelineResponse(entries: unknown[]): Response {
   return Response.json({
     data: {
@@ -144,6 +153,7 @@ describe("fetchXProfileSnapshot", () => {
     }
     const timelineUrl = timelineInput;
     expect(timelineUrl).toContain("UserTweets");
+    expectTimelineFetchCount(fetchMock, 2, 50);
   });
 
   it("ct0 を含む cookie secret では cookie 初期化リクエストを省く", async () => {
@@ -226,6 +236,24 @@ describe("fetchXProfileSnapshot", () => {
     expect(fetchMock.mock.calls[4]?.[0]).toEqual(
       expect.stringContaining("fallback-query/UserTweetsAndReplies")
     );
+  });
+
+  it("X の返却順が揺れても timestamp 降順で snapshot を返す", async () => {
+    vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
+    vi.useFakeTimers();
+    vi.stubEnv("TWITTER_AUTH_TOKEN", "auth-token");
+    vi.stubEnv("X_GQL_USER_TWEETS", "test-query/UserTweets");
+    stubFetchTimeline([
+      tweetEntry("older", { created_at: "Tue Apr 21 09:00:00 +0000 2026" }),
+      tweetEntry("newer", { created_at: "Tue Apr 21 11:00:00 +0000 2026" })
+    ]);
+
+    const snapshot = await fetchXProfileSnapshot(source);
+
+    expect(snapshot.items.map((item) => item.id)).toEqual([
+      "https://x.com/revuestarlight/status/newer",
+      "https://x.com/revuestarlight/status/older"
+    ]);
   });
 
   it("note_tweet の本文と maxItems を反映する", async () => {
