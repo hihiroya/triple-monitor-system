@@ -114,10 +114,11 @@ describe("fetchXProfileSnapshot", () => {
     vi.unstubAllGlobals();
   });
 
-  it("UserTweetsAndReplies から本人の親ポストだけを抽出する", async () => {
+  it("UserTweets から本人の親ポストだけを抽出する", async () => {
     vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
     vi.useFakeTimers();
     vi.stubEnv("TWITTER_AUTH_TOKEN", "auth-token");
+    vi.stubEnv("X_GQL_USER_TWEETS", "test-query/UserTweets");
     const fetchMock = stubFetchTimeline([
       tweetEntry("parent"),
       tweetEntry("reply", { in_reply_to_status_id_str: "parent" }),
@@ -142,13 +143,14 @@ describe("fetchXProfileSnapshot", () => {
       throw new Error("timeline fetch URL is not a string");
     }
     const timelineUrl = timelineInput;
-    expect(timelineUrl).toContain("UserTweetsAndReplies");
+    expect(timelineUrl).toContain("UserTweets");
   });
 
   it("ct0 を含む cookie secret では cookie 初期化リクエストを省く", async () => {
     vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
     vi.useFakeTimers();
     vi.stubEnv("TWITTER_AUTH_TOKEN", "auth_token=auth-token; ct0=csrf-token");
+    vi.stubEnv("X_GQL_USER_TWEETS", "test-query/UserTweets");
     const fetchMock: FetchMock = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(userResponse())
@@ -166,7 +168,7 @@ describe("fetchXProfileSnapshot", () => {
     vi.useFakeTimers();
     vi.stubEnv("TWITTER_AUTH_TOKEN", "auth-token");
     const html = `<script src="/responsive-web/client.js"></script>`;
-    const script = `"new-user-query/UserByScreenName";"new-timeline-query/UserTweetsAndReplies";`;
+    const script = `"new-user-query/UserByScreenName";"new-timeline-query/UserTweets";`;
     const fetchMock: FetchMock = vi
       .fn<typeof fetch>()
       .mockResolvedValueOnce(
@@ -180,7 +182,6 @@ describe("fetchXProfileSnapshot", () => {
       .mockResolvedValueOnce(new Response("", { status: 404 }))
       .mockResolvedValueOnce(new Response(script, { status: 200 }))
       .mockResolvedValueOnce(userResponse())
-      .mockResolvedValueOnce(new Response("", { status: 404 }))
       .mockResolvedValueOnce(new Response(script, { status: 200 }))
       .mockResolvedValueOnce(timelineResponse([tweetEntry("parent")]));
     vi.stubGlobal("fetch", fetchMock);
@@ -191,8 +192,39 @@ describe("fetchXProfileSnapshot", () => {
     expect(fetchMock.mock.calls[3]?.[0]).toEqual(
       expect.stringContaining("new-user-query/UserByScreenName")
     );
-    expect(fetchMock.mock.calls[6]?.[0]).toEqual(
-      expect.stringContaining("new-timeline-query/UserTweetsAndReplies")
+    expect(fetchMock.mock.calls[5]?.[0]).toEqual(
+      expect.stringContaining("new-timeline-query/UserTweets")
+    );
+  });
+
+  it("UserTweets が 404 の場合は UserTweetsAndReplies にフォールバックする", async () => {
+    vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
+    vi.useFakeTimers();
+    vi.stubEnv("TWITTER_AUTH_TOKEN", "auth-token");
+    vi.stubEnv("X_GQL_USER_TWEETS", "old-query/UserTweets");
+    vi.stubEnv("X_GQL_USER_TWEETS_AND_REPLIES", "fallback-query/UserTweetsAndReplies");
+    const fetchMock: FetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        new Response("", {
+          status: 200,
+          headers: {
+            "set-cookie": "ct0=csrf-token; Path=/; Secure"
+          }
+        })
+      )
+      .mockResolvedValueOnce(userResponse())
+      .mockResolvedValueOnce(new Response("", { status: 404 }))
+      .mockResolvedValueOnce(new Response("", { status: 200 }))
+      .mockResolvedValueOnce(timelineResponse([tweetEntry("parent")]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const snapshot = await fetchXProfileSnapshot(source);
+
+    expect(snapshot.items[0]?.id).toBe("https://x.com/revuestarlight/status/parent");
+    expect(fetchMock.mock.calls[2]?.[0]).toEqual(expect.stringContaining("old-query/UserTweets"));
+    expect(fetchMock.mock.calls[4]?.[0]).toEqual(
+      expect.stringContaining("fallback-query/UserTweetsAndReplies")
     );
   });
 
@@ -200,6 +232,7 @@ describe("fetchXProfileSnapshot", () => {
     vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
     vi.useFakeTimers();
     vi.stubEnv("TWITTER_AUTH_TOKEN", "auth-token");
+    vi.stubEnv("X_GQL_USER_TWEETS", "test-query/UserTweets");
     stubFetchTimeline([
       {
         entryId: "tweet-note",
@@ -235,6 +268,7 @@ describe("fetchXProfileSnapshot", () => {
     vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
     vi.useFakeTimers();
     vi.stubEnv("TWITTER_AUTH_TOKEN", "auth-token");
+    vi.stubEnv("X_GQL_USER_TWEETS", "test-query/UserTweets");
     stubFetchTimeline([tweetEntry("reply", { in_reply_to_status_id_str: "parent" })]);
 
     await expect(fetchXProfileSnapshot(source)).rejects.toThrow(

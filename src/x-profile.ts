@@ -7,17 +7,27 @@ const X_BEARER_TOKEN =
   "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
 
 const DEFAULT_MAX_AGE_HOURS = 72;
+const MAX_DYNAMIC_ENDPOINT_CANDIDATES = 5;
 
-const GQL_ENDPOINTS = {
-  userByScreenName:
-    process.env.X_GQL_USER_BY_SCREEN_NAME ?? "IGgvgiOx4QZndDHuD3x9TQ/UserByScreenName",
-  userTweetsAndReplies:
-    process.env.X_GQL_USER_TWEETS_AND_REPLIES ?? "Yt1JzwcBsBWYEEi3jMTe2Q/UserTweetsAndReplies"
-};
 const GQL_OPERATION_NAMES = {
   userByScreenName: "UserByScreenName",
+  userTweets: "UserTweets",
   userTweetsAndReplies: "UserTweetsAndReplies"
 } as const;
+type GqlOperationKey = keyof typeof GQL_OPERATION_NAMES;
+
+function getConfiguredEndpoint(operationName: GqlOperationKey): string | undefined {
+  switch (operationName) {
+    case "userByScreenName":
+      return process.env.X_GQL_USER_BY_SCREEN_NAME ?? "IGgvgiOx4QZndDHuD3x9TQ/UserByScreenName";
+    case "userTweets":
+      return process.env.X_GQL_USER_TWEETS;
+    case "userTweetsAndReplies":
+      return (
+        process.env.X_GQL_USER_TWEETS_AND_REPLIES ?? "Yt1JzwcBsBWYEEi3jMTe2Q/UserTweetsAndReplies"
+      );
+  }
+}
 
 const USER_FEATURES = {
   hidden_profile_subscriptions_enabled: true,
@@ -209,31 +219,44 @@ function extractScriptUrls(html: string): string[] {
   return Array.from(urls);
 }
 
-function findEndpointInScript(script: string, operationName: string): string | undefined {
-  const escapedName = operationName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const patterns = [
-    new RegExp(`["']([A-Za-z0-9_-]{10,})/${escapedName}["']`),
-    new RegExp(`queryId["']?\\s*[:=]\\s*["']([A-Za-z0-9_-]{10,})["'][^]{0,300}${escapedName}`),
-    new RegExp(`${escapedName}[^]{0,300}queryId["']?\\s*[:=]\\s*["']([A-Za-z0-9_-]{10,})["']`)
-  ];
-  for (const pattern of patterns) {
-    const match = script.match(pattern);
-    if (match?.[1]) {
-      return `${match[1]}/${operationName}`;
-    }
-  }
-  return undefined;
+function uniqueStrings(values: string[]): string[] {
+  return Array.from(new Set(values));
 }
 
-async function resolveEndpointFromScripts(
+function findEndpointsInScript(script: string, operationName: string): string[] {
+  const escapedName = operationName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const endpoints: string[] = [];
+  const patterns = [
+    new RegExp(`["']([A-Za-z0-9_-]{10,})/${escapedName}["']`, "g"),
+    new RegExp(
+      `queryId["']?\\s*[:=]\\s*["']([A-Za-z0-9_-]{10,})["'][\\s\\S]{0,500}${escapedName}`,
+      "g"
+    ),
+    new RegExp(
+      `${escapedName}[\\s\\S]{0,500}queryId["']?\\s*[:=]\\s*["']([A-Za-z0-9_-]{10,})["']`,
+      "g"
+    )
+  ];
+  for (const pattern of patterns) {
+    for (const match of script.matchAll(pattern)) {
+      if (match[1]) {
+        endpoints.push(`${match[1]}/${operationName}`);
+      }
+    }
+  }
+  return uniqueStrings(endpoints);
+}
+
+async function resolveEndpointsFromScripts(
   operationName: string,
   auth: XAuth,
   screenName: string
-): Promise<string | undefined> {
+): Promise<string[]> {
   const html =
     auth.html ||
     (await fetchTextWithAuth(`${X_HOME_URL}/${screenName}?mx=2`, auth).catch(() => ""));
   const scriptUrls = extractScriptUrls(html).slice(0, 25);
+  const endpoints: string[] = [];
   for (const scriptUrl of scriptUrls) {
     const response = await fetchWithTimeout(scriptUrl, {
       headers: {
@@ -244,12 +267,12 @@ async function resolveEndpointFromScripts(
     if (!response?.ok) {
       continue;
     }
-    const endpoint = findEndpointInScript(await response.text(), operationName);
-    if (endpoint) {
-      return endpoint;
+    endpoints.push(...findEndpointsInScript(await response.text(), operationName));
+    if (endpoints.length >= MAX_DYNAMIC_ENDPOINT_CANDIDATES) {
+      break;
     }
   }
-  return undefined;
+  return uniqueStrings(endpoints).slice(0, MAX_DYNAMIC_ENDPOINT_CANDIDATES);
 }
 
 async function fetchTextWithAuth(url: string, auth: XAuth): Promise<string> {
@@ -263,26 +286,61 @@ async function fetchTextWithAuth(url: string, auth: XAuth): Promise<string> {
 }
 
 async function fetchXJsonWithEndpointFallback(
-  operationName: keyof typeof GQL_ENDPOINTS,
+  operationName: GqlOperationKey,
   params: Record<string, unknown>,
   auth: XAuth,
   screenName: string
 ): Promise<unknown> {
-  const endpoint = GQL_ENDPOINTS[operationName];
   const gqlOperationName = GQL_OPERATION_NAMES[operationName];
-  try {
-    return await fetchXJson(gqlOperationName, endpoint, params, auth);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    if (!message.includes("status=404")) {
-      throw error;
-    }
-    const resolvedEndpoint = await resolveEndpointFromScripts(gqlOperationName, auth, screenName);
-    if (!resolvedEndpoint || resolvedEndpoint === endpoint) {
-      throw error;
-    }
-    return fetchXJson(gqlOperationName, resolvedEndpoint, params, auth);
+  const candidates: string[] = [];
+  const configuredEndpoint = getConfiguredEndpoint(operationName);
+  if (configuredEndpoint) {
+    candidates.push(configuredEndpoint);
   }
+
+  const attempted = new Set<string>();
+  let lastNotFoundError: unknown;
+  let dynamicResolved = false;
+  for (;;) {
+    for (const endpoint of uniqueStrings(candidates)) {
+      if (attempted.has(endpoint)) {
+        continue;
+      }
+      attempted.add(endpoint);
+      try {
+        return await fetchXJson(gqlOperationName, endpoint, params, auth);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (!message.includes("status=404")) {
+          throw error;
+        }
+        lastNotFoundError = error;
+      }
+    }
+
+    if (dynamicResolved) {
+      break;
+    }
+    dynamicResolved = true;
+    for (const endpoint of await resolveEndpointsFromScripts(gqlOperationName, auth, screenName)) {
+      if (!candidates.includes(endpoint)) {
+        candidates.push(endpoint);
+      }
+    }
+    if (candidates.length === 0) {
+      break;
+    }
+  }
+
+  if (lastNotFoundError instanceof Error) {
+    throw lastNotFoundError;
+  }
+  throw new Error(`X Web API endpoint not found: operation=${gqlOperationName}`);
+}
+
+function isXWebApiNotFound(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status=404") || message.includes("endpoint not found");
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
@@ -418,7 +476,7 @@ function tweetToMonitorItem(tweet: XLegacyTweet, user: XUser): MonitorItem {
 /**
  * X profile の Web API から本人の親ポストだけを抽出する。
  *
- * RSSHub の Web API 実装と同じく UserByScreenName と UserTweetsAndReplies を使うが、
+ * RSSHub の Web API 実装と同じく UserByScreenName と profile timeline を使うが、
  * ページングや検索は行わず、返信・RT を除外して API 呼び出し数と誤通知を抑える。
  */
 export async function fetchXProfileSnapshot(source: XProfileSource): Promise<ListSnapshot> {
@@ -444,25 +502,39 @@ export async function fetchXProfileSnapshot(source: XProfileSource): Promise<Lis
   );
   const user = extractUser(userResponse, source.screenName);
 
-  const timelineResponse = await fetchXJsonWithEndpointFallback(
-    "userTweetsAndReplies",
-    {
-      variables: {
-        userId: user.id,
-        count: 20,
-        includePromotedContent: false,
-        withCommunity: true,
-        withVoice: true,
-        withV2Timeline: true
-      },
-      features: TIMELINE_FEATURES,
-      fieldToggles: {
-        withArticlePlainText: false
-      }
+  const timelineParams = {
+    variables: {
+      userId: user.id,
+      count: 20,
+      includePromotedContent: false,
+      withCommunity: true,
+      withVoice: true,
+      withV2Timeline: true
     },
-    auth,
-    source.screenName
-  );
+    features: TIMELINE_FEATURES,
+    fieldToggles: {
+      withArticlePlainText: false
+    }
+  };
+  let timelineResponse: unknown;
+  try {
+    timelineResponse = await fetchXJsonWithEndpointFallback(
+      "userTweets",
+      timelineParams,
+      auth,
+      source.screenName
+    );
+  } catch (error) {
+    if (!isXWebApiNotFound(error)) {
+      throw error;
+    }
+    timelineResponse = await fetchXJsonWithEndpointFallback(
+      "userTweetsAndReplies",
+      timelineParams,
+      auth,
+      source.screenName
+    );
+  }
 
   const seen = new Set<string>();
   const items: MonitorItem[] = [];
