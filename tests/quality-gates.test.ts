@@ -125,7 +125,9 @@ describe("quality gate helpers", () => {
     expect(twitterSources.length).toBeGreaterThan(0);
     for (const source of twitterSources) {
       expect(source.group).toBe("x-twitter");
-      expect(source.rssUrl).toMatch(/^http:\/\/127\.0\.0\.1:1200\/twitter\/user\/[^/]+$/);
+      expect(source.rssUrl).toMatch(
+        /^http:\/\/127\.0\.0\.1:1200\/twitter\/user\/[^/]+(?:\/[A-Za-z0-9=&_-]+)?$/
+      );
       expect(source.rssUrl).not.toContain("localhost");
       expect(source.rssUrl).not.toContain("TWITTER_AUTH_TOKEN");
     }
