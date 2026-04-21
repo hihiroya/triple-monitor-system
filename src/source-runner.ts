@@ -92,6 +92,13 @@ function formatLogItemId(itemId: string | undefined): string {
   return itemId.length > 160 ? `${itemId.slice(0, 157)}...` : itemId;
 }
 
+function formatLogItemIds(itemIds: string[]): string {
+  if (itemIds.length === 0) {
+    return "(none)";
+  }
+  return itemIds.map(formatLogItemId).join(",");
+}
+
 /**
  * 取得結果から未通知 item を古い順に返す。
  *
@@ -176,7 +183,9 @@ async function runListSource(
   logger.info(
     `list snapshot: key=${source.key} items=${items.length} latest=${formatLogItemId(
       latestItem.id
-    )} previousSeen=${previousSeenItemIds.length} seenIntersection=${alreadySeenItemIds.length}`
+    )} previousSeen=${previousSeenItemIds.length} seenIntersection=${
+      alreadySeenItemIds.length
+    } sample=${formatLogItemIds(itemIds.slice(0, 10))}`
   );
 
   if (!lastSeenItemId) {
