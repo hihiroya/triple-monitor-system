@@ -53,7 +53,7 @@
     "key": "revuestarlight",
     "type": "rss",
     "label": "少女☆歌劇 レヴュースタァライト",
-    "rssUrl": "http://127.0.0.1:1200/twitter/keyword/from:revuestarlight",
+    "rssUrl": "http://127.0.0.1:1200/twitter/user/revuestarlight",
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
     "enabled": true,
     "group": "x-twitter",
