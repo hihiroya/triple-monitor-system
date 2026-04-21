@@ -1,12 +1,12 @@
 # Triple Monitor System
 
-GitHub Actions 上で RSS、Notion API ページ、公開 HTML 一覧を定期監視し、新着や更新を Discord webhook に通知する汎用監視基盤です。
+GitHub Actions 上で RSS、X profile、Notion API ページ、公開 HTML 一覧を定期監視し、新着や更新を Discord webhook に通知する汎用監視基盤です。
 
 実行環境は Node.js 24 LTS 前提です。GitHub Actions でも `actions/setup-node@v6` で Node 24 を明示し、ローカル開発環境との差異を減らしています。
 
 ## 概要
 
-このリポジトリは 3 種類の監視を同じ state 形式と通知処理で扱います。差分管理と通知の安全性を共通化すると、監視タイプが違っても「初回は通知しない」「通知成功後だけ既読にする」「1 source の失敗を他 source に波及させない」という運用ルールを揃えられます。
+このリポジトリは複数種類の監視を同じ state 形式と通知処理で扱います。差分管理と通知の安全性を共通化すると、監視タイプが違っても「初回は通知しない」「通知成功後だけ既読にする」「1 source の失敗を他 source に波及させない」という運用ルールを揃えられます。
 
 workflow は `rss-monitor.yml`、`x-twitter-monitor.yml`、`x-profile-monitor.yml`、`notion-monitor.yml`、`public-site-monitor.yml` に分けています。監視先の失敗原因、必要な Secrets、実行頻度を種類ごとに切り分けやすくするためです。state ファイルは共通なので、workflow の concurrency は同じ `monitor-state` にして直列実行します。
 
@@ -57,7 +57,8 @@ workflow は `rss-monitor.yml`、`x-twitter-monitor.yml`、`x-profile-monitor.ym
 │  ├─ selector-strategies.test.ts
 │  ├─ source-runner.test.ts
 │  ├─ source-validator.test.ts
-│  └─ state.test.ts
+│  ├─ state.test.ts
+│  └─ x-profile.test.ts
 ├─ state/monitor-state.json
 ├─ eslint.config.mjs
 ├─ knip.json
@@ -156,7 +157,6 @@ npm run monitor:rss
 npm run monitor:rss:standard
 npm run monitor:x-twitter
 npm run monitor:x-profile
-npm run monitor:x-profile:experimental
 npm run monitor:notion
 npm run monitor:public-html
 ```
@@ -193,7 +193,7 @@ $env:TWITTER_AUTH_TOKEN="..."
 
 Discord webhook URL、Notion token、X/Twitter の `auth_token` は GitHub Secrets に登録し、`sources.json` には環境変数名やローカル RSSHub URL だけを書いてください。ログには URL や token を出さない実装にしていますが、設定値そのものをコミットしない運用を守ってください。
 
-RSSHub は `x-twitter-monitor.yml` の service container として runner 内だけで使います。通常の X/Twitter RSS 監視では `TWITTER_AUTH_TOKEN` は RSSHub と secret 事前チェックの step にだけ渡し、監視アプリ本体には渡しません。実験段階の `x-profile-monitor.yml` では X Web API を直接呼ぶため、監視アプリ本体にも `TWITTER_AUTH_TOKEN` を渡します。X/Twitter の `auth_token` はアカウントへのアクセス権に近い機密値なので、定期的に更新し、不要になったら GitHub Secrets から削除してください。
+RSSHub は `x-twitter-monitor.yml` の service container として runner 内だけで使います。通常の X/Twitter RSS 監視では `TWITTER_AUTH_TOKEN` は RSSHub と secret 事前チェックの step にだけ渡し、監視アプリ本体には渡しません。`x-profile-monitor.yml` は X Web API を直接呼ぶため、監視アプリ本体にも `TWITTER_AUTH_TOKEN` を渡します。X/Twitter の `auth_token` はアカウントへのアクセス権に近い機密値なので、定期的に更新し、不要になったら GitHub Secrets から削除してください。
 
 ## 開発者向け品質チェック
 

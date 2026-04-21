@@ -21,7 +21,6 @@
     "monitor:rss:standard": "node dist/main.js --type rss --group standard-rss",
     "monitor:x-twitter": "node dist/main.js --type rss --group x-twitter",
     "monitor:x-profile": "node dist/main.js --type x_profile_poll --group x-profile",
-    "monitor:x-profile:experimental": "node dist/main.js --type x_profile_poll --group x-profile-experimental",
     "monitor:notion": "node dist/main.js --group notion",
     "monitor:public-html": "node dist/main.js --type public_html_list_poll"
   },
