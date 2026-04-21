@@ -144,6 +144,57 @@ describe("runSource", () => {
     });
   });
 
+  it("list source は既読 item の間に挟まった未読 item も通知する", async () => {
+    vi.mocked(fetchRssSnapshot).mockResolvedValue({
+      kind: "list",
+      items: [item("a"), item("n"), item("b"), item("c")]
+    });
+    vi.mocked(notifyDiscord).mockResolvedValue(undefined);
+    const state: MonitorState = {
+      sources: {
+        "rss-main": {
+          lastSeenItemId: "a",
+          seenItemIds: ["a", "b", "c"]
+        }
+      }
+    };
+
+    const result = await runSource(rssSource, state);
+
+    expect(result).toMatchObject({ ok: true, changed: true, message: "1 件通知しました" });
+    expect(notifyDiscord).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(notifyDiscord).mock.calls[0]?.[1]).toMatchObject({ id: "n" });
+    expect(state.sources["rss-main"]).toEqual({
+      lastSeenItemId: "a",
+      seenItemIds: ["n", "a", "b", "c"]
+    });
+  });
+
+  it("list source は既読 item の間に挟まった未読 item の通知失敗時に既読化しない", async () => {
+    vi.mocked(fetchRssSnapshot).mockResolvedValue({
+      kind: "list",
+      items: [item("a"), item("n"), item("b"), item("c")]
+    });
+    vi.mocked(notifyDiscord).mockRejectedValue(new Error("webhook failed"));
+    const state: MonitorState = {
+      sources: {
+        "rss-main": {
+          lastSeenItemId: "a",
+          seenItemIds: ["a", "b", "c"]
+        }
+      }
+    };
+
+    const result = await runSource(rssSource, state);
+
+    expect(result).toMatchObject({ ok: false, changed: false, message: "webhook failed" });
+    expect(notifyDiscord).toHaveBeenCalledTimes(1);
+    expect(state.sources["rss-main"]).toEqual({
+      lastSeenItemId: "a",
+      seenItemIds: ["a", "b", "c"]
+    });
+  });
+
   it("list source で既読履歴が取得結果にない場合は大量通知せず失敗にする", async () => {
     vi.mocked(fetchRssSnapshot).mockResolvedValue({
       kind: "list",

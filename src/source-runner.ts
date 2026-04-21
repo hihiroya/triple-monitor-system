@@ -2,6 +2,7 @@ import { notifyDiscord } from "./discord.js";
 import { fetchNotionDatabaseSnapshot, fetchNotionPageSnapshot } from "./notion.js";
 import { fetchPublicHtmlSnapshot } from "./public-html.js";
 import { fetchRssSnapshot } from "./rss.js";
+import { logger } from "./logger.js";
 import type {
   MonitorItem,
   MonitorSource,
@@ -79,6 +80,18 @@ function rememberSeenItems(newestItemIds: string[], previousSeenItemIds: string[
   return result.slice(0, SEEN_ITEM_HISTORY_LIMIT);
 }
 
+function filterAlreadySeenItemIds(itemIds: string[], previousSeenItemIds: string[]): string[] {
+  const seen = new Set(previousSeenItemIds);
+  return itemIds.filter((itemId) => seen.has(itemId));
+}
+
+function formatLogItemId(itemId: string | undefined): string {
+  if (!itemId) {
+    return "(none)";
+  }
+  return itemId.length > 160 ? `${itemId.slice(0, 157)}...` : itemId;
+}
+
 /**
  * 取得結果から未通知 item を古い順に返す。
  *
@@ -91,8 +104,8 @@ function findNewItems(items: MonitorItem[], seenItemIds: string[]): MonitorItem[
   }
 
   const seen = new Set(seenItemIds);
-  const index = items.findIndex((item) => seen.has(item.id));
-  if (index === -1) {
+  const hasSeenIntersection = items.some((item) => seen.has(item.id));
+  if (!hasSeenIntersection) {
     // 既読履歴と取得結果が交差しない場合は、順序変更や取得窓落ちの疑いがある。
     // 全件通知すると重複通知になり得るため、運用者が確認できるよう source 失敗にする。
     throw new Error(
@@ -100,7 +113,7 @@ function findNewItems(items: MonitorItem[], seenItemIds: string[]): MonitorItem[
     );
   }
 
-  return items.slice(0, index).reverse();
+  return items.filter((item) => !seen.has(item.id)).reverse();
 }
 
 /**
@@ -158,6 +171,13 @@ async function runListSource(
 
   const itemIds = items.map((item) => item.id);
   const previousSeenItemIds = normalizeSeenItemIds(lastSeenItemId, seenItemIds);
+  const alreadySeenItemIds = filterAlreadySeenItemIds(itemIds, previousSeenItemIds);
+
+  logger.info(
+    `list snapshot: key=${source.key} items=${items.length} latest=${formatLogItemId(
+      latestItem.id
+    )} previousSeen=${previousSeenItemIds.length} seenIntersection=${alreadySeenItemIds.length}`
+  );
 
   if (!lastSeenItemId) {
     // 初回通知は過去記事の大量通知を避けるため行わず、現在位置だけを記録する。
@@ -174,10 +194,16 @@ async function runListSource(
   }
 
   const newItems = findNewItems(items, previousSeenItemIds);
+  logger.info(
+    `list diff: key=${source.key} newItems=${newItems.length} firstNew=${formatLogItemId(
+      newItems[0]?.id
+    )}`
+  );
+
   if (newItems.length === 0) {
     state.sources[source.key] = {
-      lastSeenItemId: latestItem.id,
-      seenItemIds: rememberSeenItems(itemIds, previousSeenItemIds)
+      lastSeenItemId,
+      seenItemIds: rememberSeenItems(previousSeenItemIds, alreadySeenItemIds)
     };
     return {
       key: source.key,
@@ -200,7 +226,7 @@ async function runListSource(
 
   state.sources[source.key] = {
     lastSeenItemId: latestItem.id,
-    seenItemIds: rememberSeenItems(itemIds, currentSeenItemIds)
+    seenItemIds: rememberSeenItems(currentSeenItemIds, alreadySeenItemIds)
   };
 
   return {

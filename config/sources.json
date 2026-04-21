@@ -37,7 +37,7 @@
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
     "enabled": true,
     "group": "x-twitter",
-    "maxItems": 10
+    "maxItems": 50
   },
   {
     "key": "starlight_9thEX",
@@ -47,7 +47,7 @@
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
     "enabled": true,
     "group": "x-twitter",
-    "maxItems": 10
+    "maxItems": 50
   },
   {
     "key": "revuestarlight",
@@ -57,7 +57,7 @@
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
     "enabled": true,
     "group": "x-twitter",
-    "maxItems": 10
+    "maxItems": 50
   },
   {
     "key": "Sf_classdiary",
@@ -67,7 +67,7 @@
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
     "enabled": true,
     "group": "x-twitter",
-    "maxItems": 10
+    "maxItems": 50
   },
   {
     "key": "Siegfeldchutobu",
@@ -77,7 +77,7 @@
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
     "enabled": true,
     "group": "x-twitter",
-    "maxItems": 10
+    "maxItems": 50
   },
   {
     "key": "notion-top-page",
