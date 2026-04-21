@@ -14,6 +14,10 @@ function requireText(value: string, label: string): void {
   expect(value, `${label} が見つかりません`).not.toBe("");
 }
 
+function isTwitterRssUrl(rssUrl: string): boolean {
+  return rssUrl.includes("/twitter/user/") || rssUrl.includes("/twitter/keyword/");
+}
+
 describe("quality gate helpers", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -120,13 +124,13 @@ describe("quality gate helpers", () => {
     const sources = validateSources(rawSources);
     const twitterSources = sources
       .filter(isRssSource)
-      .filter((source) => source.rssUrl.includes("/twitter/user/"));
+      .filter((source) => isTwitterRssUrl(source.rssUrl));
 
     expect(twitterSources.length).toBeGreaterThan(0);
     for (const source of twitterSources) {
       expect(source.group).toBe("x-twitter");
       expect(source.rssUrl).toMatch(
-        /^http:\/\/127\.0\.0\.1:1200\/twitter\/user\/[^/]+(?:\/[A-Za-z0-9=&_-]+)?$/
+        /^http:\/\/127\.0\.0\.1:1200\/twitter\/(?:user|keyword)\/[^/]+(?:\/[A-Za-z0-9=&_-]+)?$/
       );
       expect(source.rssUrl).not.toContain("localhost");
       expect(source.rssUrl).not.toContain("TWITTER_AUTH_TOKEN");
@@ -138,7 +142,7 @@ describe("quality gate helpers", () => {
     const sources = validateSources(rawSources);
     const standardRssSources = sources
       .filter(isRssSource)
-      .filter((source) => !source.rssUrl.includes("/twitter/user/"));
+      .filter((source) => !isTwitterRssUrl(source.rssUrl));
 
     expect(standardRssSources.length).toBeGreaterThan(0);
     for (const source of standardRssSources) {
