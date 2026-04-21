@@ -110,7 +110,7 @@ RSS/Atom XML を取得し、`link` を item ID として扱います。前回の
 
 通常 RSS は `rss-monitor.yml` が `group=standard-rss` だけを実行します。X/Twitter の RSS は `x-twitter-monitor.yml` が GitHub Actions runner 内で RSSHub service を起動し、`group=x-twitter` の source だけを `http://127.0.0.1:1200/twitter/user/...` から取得します。RSSHub の X/Twitter route は認証が必要なため、GitHub Secrets に `TWITTER_AUTH_TOKEN` を登録してください。これはログイン済み X/Twitter Web の Cookie `auth_token` の値です。
 
-X/Twitter source は RSSHub の routeParams を使えます。スレッドや返信付き投稿が通常 timeline に出ない場合は、対象 source の `rssUrl` に `/includeReplies=1&forceWebApi=1&count=50` のような routeParams を追加して、RSSHub 側の取得結果に対象ポストが含まれるか確認してください。
+X/Twitter source は RSSHub の routeParams を使えます。スレッド付き投稿が通常 timeline に出ない場合は、まず対象 source の `rssUrl` に `/forceWebApi=1&count=50` のような routeParams を追加して、RSSHub 側の取得結果に対象ポストが含まれるか確認してください。返信ポストまで必要な場合は、RSSHub image を最新 digest に更新したうえで `/includeReplies=1&forceWebApi=1&count=50` を段階的に試してください。
 
 RSSHub は workflow 内の一時 container として起動するため、永続 cache は持ちません。既読管理はこのリポジトリの `state/monitor-state.json` が担当します。監視頻度を短くしすぎると X/Twitter 側の制限に触れやすいため、通常は現在の 30 分間隔を基準にしてください。
 
