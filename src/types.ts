@@ -26,6 +26,7 @@ export interface XProfileSource extends BaseSource {
   xAuthTokenEnvName: string;
   maxItems?: number;
   maxAgeHours?: number;
+  includeRetweets?: boolean;
 }
 
 export interface NotionPageSource extends BaseSource {

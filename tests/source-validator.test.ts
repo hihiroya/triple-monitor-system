@@ -211,4 +211,45 @@ describe("validateSources", () => {
       ])
     ).toThrow("maxItems は 1 以上 100 以下の整数である必要があります");
   });
+
+  it("x_profile_poll の includeRetweets を検証して正規化する", () => {
+    const [source] = validateSources([
+      {
+        key: "x-profile",
+        type: "x_profile_poll",
+        label: "X Profile",
+        screenName: "revuestarlight",
+        xAuthTokenEnvName: "TWITTER_AUTH_TOKEN",
+        webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+        enabled: true,
+        maxItems: 20,
+        maxAgeHours: 72,
+        includeRetweets: true
+      }
+    ]);
+
+    expect(source).toMatchObject({
+      key: "x-profile",
+      type: "x_profile_poll",
+      screenName: "revuestarlight",
+      includeRetweets: true
+    });
+  });
+
+  it("不正な includeRetweets を拒否する", () => {
+    expect(() =>
+      validateSources([
+        {
+          key: "x-profile",
+          type: "x_profile_poll",
+          label: "X Profile",
+          screenName: "revuestarlight",
+          xAuthTokenEnvName: "TWITTER_AUTH_TOKEN",
+          webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+          enabled: true,
+          includeRetweets: "yes"
+        }
+      ])
+    ).toThrow("includeRetweets は boolean である必要があります");
+  });
 });

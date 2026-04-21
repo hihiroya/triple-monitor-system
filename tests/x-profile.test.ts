@@ -156,6 +156,32 @@ describe("fetchXProfileSnapshot", () => {
     expectTimelineFetchCount(fetchMock, 2, 50);
   });
 
+  it("includeRetweets が true の場合は本人の RT も抽出する", async () => {
+    vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
+    vi.useFakeTimers();
+    vi.stubEnv("TWITTER_AUTH_TOKEN", "auth-token");
+    vi.stubEnv("X_GQL_USER_TWEETS", "test-query/UserTweets");
+    stubFetchTimeline([
+      tweetEntry("parent"),
+      tweetEntry("retweet", {
+        full_text: "RT @official: reposted news",
+        retweeted_status_result: {}
+      }),
+      tweetEntry("reply-retweet", {
+        in_reply_to_status_id_str: "parent",
+        retweeted_status_result: {}
+      })
+    ]);
+
+    const snapshot = await fetchXProfileSnapshot({ ...source, includeRetweets: true });
+
+    expect(snapshot.items.map((item) => item.id)).toEqual([
+      "https://x.com/revuestarlight/status/parent",
+      "https://x.com/revuestarlight/status/retweet"
+    ]);
+    expect(snapshot.items[1]?.title).toContain("RT @official: reposted news");
+  });
+
   it("ct0 を含む cookie secret では cookie 初期化リクエストを省く", async () => {
     vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
     vi.useFakeTimers();

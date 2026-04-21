@@ -104,7 +104,7 @@ TWITTER_AUTH_TOKEN
 | `enabled`        | `true` の source だけ監視します。                                                                                     |
 | `group`          | 任意の実行グループです。RSS workflow の分割実行に使います。                                                           |
 
-RSS では `rssUrl` と任意の `maxItems` を使います。X profile では `screenName`、`xAuthTokenEnvName`、任意の `maxItems`、`maxAgeHours` を使います。Notion page では `pageId` と `notionTokenEnvName`、Notion database では `databaseId` と `notionTokenEnvName` を使います。公開 HTML では `url`、`selectorStrategy`、任意の `maxItems` を使います。
+RSS では `rssUrl` と任意の `maxItems` を使います。X profile では `screenName`、`xAuthTokenEnvName`、任意の `maxItems`、`maxAgeHours`、`includeRetweets` を使います。Notion page では `pageId` と `notionTokenEnvName`、Notion database では `databaseId` と `notionTokenEnvName` を使います。公開 HTML では `url`、`selectorStrategy`、任意の `maxItems` を使います。
 
 ## 監視タイプ
 
@@ -122,9 +122,9 @@ RSSHub の container image は `ghcr.io/diygod/rsshub@sha256:...` で digest 固
 
 ### X Profile Poll
 
-`x_profile_poll` は RSSHub の X Web API 実装を参考に、X の `UserByScreenName` と `UserTweetsAndReplies` GraphQL を直接呼び出します。ツリー内の返信そのものは通知せず、本人投稿かつ `in_reply_to_status_id_str` がない親ポストだけを抽出します。検索 route やページングは使わず、1 source あたり cookie 初期化、user lookup、timeline 取得を各 1 回に抑えて、X 側の制限に触れにくいようにしています。
+`x_profile_poll` は RSSHub の X Web API 実装を参考に、X の `UserByScreenName` と profile timeline GraphQL を直接呼び出します。ツリー内の返信そのものは通知せず、本人投稿かつ `in_reply_to_status_id_str` がない親ポストを抽出します。`includeRetweets=true` の場合は本人が行った RT も対象に含めます。検索 route やページングは使わず、1 source あたり cookie 初期化、user lookup、timeline 取得を各 1 回に抑えて、X 側の制限に触れにくいようにしています。
 
-現在は `revuestarlight-x-profile` を `group=x-profile-experimental` として登録し、`x-profile-monitor.yml` の手動実行だけで検証します。`maxAgeHours` で古すぎる投稿を除外し、過去ポストの大量通知を避けます。X GraphQL の query id が変わった場合は、`X_GQL_USER_BY_SCREEN_NAME` と `X_GQL_USER_TWEETS_AND_REPLIES` 環境変数で一時的に差し替えられます。
+現在は `revuestarlight-x-profile` を `group=x-profile-experimental` として登録し、`x-profile-monitor.yml` の手動実行だけで検証します。`maxAgeHours` で古すぎる投稿を除外し、過去ポストの大量通知を避けます。X GraphQL の query id が変わった場合は、`X_GQL_USER_BY_SCREEN_NAME`、`X_GQL_USER_TWEETS`、`X_GQL_USER_TWEETS_AND_REPLIES` 環境変数で一時的に差し替えられます。
 
 ### Notion API
 

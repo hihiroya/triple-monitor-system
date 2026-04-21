@@ -104,6 +104,17 @@ function optionalMaxAgeHours(record: Record<string, unknown>): number | undefine
   return value;
 }
 
+function optionalBoolean(record: Record<string, unknown>, field: string): boolean | undefined {
+  const value = record[field];
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value !== "boolean") {
+    throw new Error(`${field} は boolean である必要があります`);
+  }
+  return value;
+}
+
 function requireScreenName(record: Record<string, unknown>): string {
   const value = requireString(record, "screenName");
   if (!/^[A-Za-z0-9_]{1,15}$/.test(value)) {
@@ -173,7 +184,12 @@ function validateSource(value: unknown, index: number, seenKeys: Set<string>): M
     const maxItems = optionalMaxItems(value);
     const withMaxItems = maxItems === undefined ? source : { ...source, maxItems };
     const maxAgeHours = optionalMaxAgeHours(value);
-    return maxAgeHours === undefined ? withMaxItems : { ...withMaxItems, maxAgeHours };
+    const withMaxAgeHours =
+      maxAgeHours === undefined ? withMaxItems : { ...withMaxItems, maxAgeHours };
+    const includeRetweets = optionalBoolean(value, "includeRetweets");
+    return includeRetweets === undefined
+      ? withMaxAgeHours
+      : { ...withMaxAgeHours, includeRetweets };
   }
 
   if (commonWithGroup.type === "notion_api_page_poll") {

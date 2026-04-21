@@ -69,7 +69,8 @@
     "enabled": true,
     "group": "x-profile-experimental",
     "maxItems": 20,
-    "maxAgeHours": 72
+    "maxAgeHours": 72,
+    "includeRetweets": true
   },
   {
     "key": "Sf_classdiary",

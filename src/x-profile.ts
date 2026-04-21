@@ -445,14 +445,19 @@ function legacyFromTweet(tweet: Record<string, unknown>): XLegacyTweet | undefin
   return legacy;
 }
 
-function isParentPost(tweet: XLegacyTweet, user: XUser, cutoffTime: number): boolean {
+function isTargetTimelinePost(
+  tweet: XLegacyTweet,
+  user: XUser,
+  cutoffTime: number,
+  includeRetweets: boolean
+): boolean {
   if (!tweet.id_str || tweet.user_id_str !== user.id) {
     return false;
   }
   if (tweet.in_reply_to_status_id_str) {
     return false;
   }
-  if (tweet.retweeted_status_result || tweet.retweeted_status) {
+  if (!includeRetweets && (tweet.retweeted_status_result || tweet.retweeted_status)) {
     return false;
   }
   const timestamp = tweet.created_at ? new Date(tweet.created_at).getTime() : Number.NaN;
@@ -483,14 +488,15 @@ function sortByTimestampDesc(items: MonitorItem[]): MonitorItem[] {
 }
 
 /**
- * X profile の Web API から本人の親ポストだけを抽出する。
+ * X profile の Web API から本人の親ポストと、設定に応じて RT を抽出する。
  *
  * RSSHub の Web API 実装と同じく UserByScreenName と profile timeline を使うが、
- * ページングや検索は行わず、返信・RT を除外して API 呼び出し数と誤通知を抑える。
+ * ページングや検索は行わず、返信を除外して API 呼び出し数と誤通知を抑える。
  */
 export async function fetchXProfileSnapshot(source: XProfileSource): Promise<ListSnapshot> {
   const maxItems = clampMaxItems(source.maxItems);
   const maxAgeHours = source.maxAgeHours ?? DEFAULT_MAX_AGE_HOURS;
+  const includeRetweets = source.includeRetweets ?? false;
   const cutoffTime = Date.now() - maxAgeHours * 60 * 60 * 1000;
   const auth = await buildXAuth(source);
 
@@ -550,7 +556,7 @@ export async function fetchXProfileSnapshot(source: XProfileSource): Promise<Lis
   for (const entry of extractTimelineEntries(timelineResponse)) {
     const tweet = extractTweetResult(entry);
     const legacy = tweet ? legacyFromTweet(tweet) : undefined;
-    if (!legacy || !isParentPost(legacy, user, cutoffTime)) {
+    if (!legacy || !isTargetTimelinePost(legacy, user, cutoffTime, includeRetweets)) {
       continue;
     }
     const item = tweetToMonitorItem(legacy, user);
