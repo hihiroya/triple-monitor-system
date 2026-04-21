@@ -16,36 +16,77 @@ const source: XProfileSource = {
   maxAgeHours: 72
 };
 
+function tweetResult(id: string, overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    rest_id: id,
+    core: {
+      user_results: {
+        result: {
+          legacy: {
+            name: "少女☆歌劇 レヴュースタァライト",
+            screen_name: "revuestarlight"
+          }
+        }
+      }
+    },
+    legacy: {
+      id_str: id,
+      user_id_str: "12345",
+      full_text: `post ${id}`,
+      created_at: "Tue Apr 21 10:00:00 +0000 2026",
+      ...overrides
+    }
+  };
+}
+
 function tweetEntry(id: string, overrides: Record<string, unknown> = {}): unknown {
   return {
     entryId: `tweet-${id}`,
     content: {
       itemContent: {
         tweet_results: {
-          result: {
-            rest_id: id,
-            core: {
-              user_results: {
-                result: {
-                  legacy: {
-                    name: "少女☆歌劇 レヴュースタァライト",
-                    screen_name: "revuestarlight"
-                  }
+          result: tweetResult(id, overrides)
+        }
+      }
+    }
+  };
+}
+
+function timelineResponse(entries: unknown[]): Response {
+  return Response.json({
+    data: {
+      user: {
+        result: {
+          timeline: {
+            timeline: {
+              instructions: [
+                {
+                  type: "TimelineAddEntries",
+                  entries
                 }
-              }
-            },
-            legacy: {
-              id_str: id,
-              user_id_str: "12345",
-              full_text: `post ${id}`,
-              created_at: "Tue Apr 21 10:00:00 +0000 2026",
-              ...overrides
+              ]
             }
           }
         }
       }
     }
-  };
+  });
+}
+
+function userResponse(): Response {
+  return Response.json({
+    data: {
+      user: {
+        result: {
+          rest_id: "12345",
+          legacy: {
+            name: "少女☆歌劇 レヴュースタァライト",
+            screen_name: "revuestarlight"
+          }
+        }
+      }
+    }
+  });
 }
 
 function stubFetchTimeline(entries: unknown[]): FetchMock {
@@ -59,41 +100,8 @@ function stubFetchTimeline(entries: unknown[]): FetchMock {
         }
       })
     )
-    .mockResolvedValueOnce(
-      Response.json({
-        data: {
-          user: {
-            result: {
-              rest_id: "12345",
-              legacy: {
-                name: "少女☆歌劇 レヴュースタァライト",
-                screen_name: "revuestarlight"
-              }
-            }
-          }
-        }
-      })
-    )
-    .mockResolvedValueOnce(
-      Response.json({
-        data: {
-          user: {
-            result: {
-              timeline: {
-                timeline: {
-                  instructions: [
-                    {
-                      type: "TimelineAddEntries",
-                      entries
-                    }
-                  ]
-                }
-              }
-            }
-          }
-        }
-      })
-    );
+    .mockResolvedValueOnce(userResponse())
+    .mockResolvedValueOnce(timelineResponse(entries));
 
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
@@ -135,5 +143,102 @@ describe("fetchXProfileSnapshot", () => {
     }
     const timelineUrl = timelineInput;
     expect(timelineUrl).toContain("UserTweetsAndReplies");
+  });
+
+  it("ct0 を含む cookie secret では cookie 初期化リクエストを省く", async () => {
+    vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
+    vi.useFakeTimers();
+    vi.stubEnv("TWITTER_AUTH_TOKEN", "auth_token=auth-token; ct0=csrf-token");
+    const fetchMock: FetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(userResponse())
+      .mockResolvedValueOnce(timelineResponse([tweetEntry("parent")]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const snapshot = await fetchXProfileSnapshot(source);
+
+    expect(snapshot.items[0]?.id).toBe("https://x.com/revuestarlight/status/parent");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("404 時に X の script から GraphQL endpoint を解決して再試行する", async () => {
+    vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
+    vi.useFakeTimers();
+    vi.stubEnv("TWITTER_AUTH_TOKEN", "auth-token");
+    const html = `<script src="/responsive-web/client.js"></script>`;
+    const script = `"new-user-query/UserByScreenName";"new-timeline-query/UserTweetsAndReplies";`;
+    const fetchMock: FetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        new Response(html, {
+          status: 200,
+          headers: {
+            "set-cookie": "ct0=csrf-token; Path=/; Secure"
+          }
+        })
+      )
+      .mockResolvedValueOnce(new Response("", { status: 404 }))
+      .mockResolvedValueOnce(new Response(script, { status: 200 }))
+      .mockResolvedValueOnce(userResponse())
+      .mockResolvedValueOnce(new Response("", { status: 404 }))
+      .mockResolvedValueOnce(new Response(script, { status: 200 }))
+      .mockResolvedValueOnce(timelineResponse([tweetEntry("parent")]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const snapshot = await fetchXProfileSnapshot(source);
+
+    expect(snapshot.items[0]?.id).toBe("https://x.com/revuestarlight/status/parent");
+    expect(fetchMock.mock.calls[3]?.[0]).toEqual(
+      expect.stringContaining("new-user-query/UserByScreenName")
+    );
+    expect(fetchMock.mock.calls[6]?.[0]).toEqual(
+      expect.stringContaining("new-timeline-query/UserTweetsAndReplies")
+    );
+  });
+
+  it("note_tweet の本文と maxItems を反映する", async () => {
+    vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
+    vi.useFakeTimers();
+    vi.stubEnv("TWITTER_AUTH_TOKEN", "auth-token");
+    stubFetchTimeline([
+      {
+        entryId: "tweet-note",
+        content: {
+          itemContent: {
+            tweet_results: {
+              result: {
+                tweet: {
+                  ...tweetResult("note", { full_text: "legacy text" }),
+                  note_tweet: {
+                    note_tweet_results: {
+                      result: {
+                        text: "note tweet text"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      tweetEntry("second")
+    ]);
+
+    const snapshot = await fetchXProfileSnapshot({ ...source, maxItems: 1 });
+
+    expect(snapshot.items).toHaveLength(1);
+    expect(snapshot.items[0]?.title).toContain("note tweet text");
+  });
+
+  it("親ポストが見つからない場合は失敗する", async () => {
+    vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
+    vi.useFakeTimers();
+    vi.stubEnv("TWITTER_AUTH_TOKEN", "auth-token");
+    stubFetchTimeline([tweetEntry("reply", { in_reply_to_status_id_str: "parent" })]);
+
+    await expect(fetchXProfileSnapshot(source)).rejects.toThrow(
+      "X profile monitor found no parent posts"
+    );
   });
 });
