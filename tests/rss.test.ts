@@ -107,4 +107,18 @@ describe("fetchRssSnapshot", () => {
       "RSSから有効な item/link を抽出できませんでした"
     );
   });
+
+  it("空 RSS の channel 情報を失敗メッセージに含める", async () => {
+    stubFetch(`<?xml version="1.0"?>
+      <rss>
+        <channel>
+          <title>RSSHub error feed</title>
+          <description>Twitter route returned no entries</description>
+        </channel>
+      </rss>`);
+
+    await expect(fetchRssSnapshot(rssSource)).rejects.toThrow(
+      "title=RSSHub error feed description=Twitter route returned no entries"
+    );
+  });
 });

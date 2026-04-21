@@ -10,6 +10,21 @@ interface ParsedRssItem {
   isoDate?: unknown;
 }
 
+interface ParsedRssRoot {
+  rss?: {
+    channel?: {
+      title?: unknown;
+      description?: unknown;
+      item?: unknown;
+    };
+  };
+  feed?: {
+    title?: unknown;
+    subtitle?: unknown;
+    entry?: unknown;
+  };
+}
+
 function asArray(value: unknown): unknown[] {
   if (Array.isArray(value)) {
     return value;
@@ -78,6 +93,17 @@ function parseTimestamp(value: string | undefined): string | undefined {
   return date.toISOString();
 }
 
+function formatEmptyFeedDetail(root: ParsedRssRoot): string {
+  const title = firstString(root.rss?.channel?.title, root.feed?.title);
+  const description = firstString(root.rss?.channel?.description, root.feed?.subtitle);
+  const parts = [
+    title ? `title=${normalizeWhitespace(title).slice(0, 160)}` : undefined,
+    description ? `description=${normalizeWhitespace(description).slice(0, 240)}` : undefined
+  ].filter((part): part is string => part !== undefined);
+
+  return parts.length > 0 ? ` ${parts.join(" ")}` : "";
+}
+
 /**
  * RSS/Atom の公開フィードから一覧 snapshot を取得する。
  *
@@ -106,10 +132,7 @@ export async function fetchRssSnapshot(source: RssSource): Promise<ListSnapshot>
     );
   }
 
-  const root = parsed as {
-    rss?: { channel?: { item?: unknown } };
-    feed?: { entry?: unknown };
-  };
+  const root = parsed as ParsedRssRoot;
   const rawItems = root.rss?.channel?.item ?? root.feed?.entry;
   const maxItems = clampMaxItems(source.maxItems);
 
@@ -139,7 +162,7 @@ export async function fetchRssSnapshot(source: RssSource): Promise<ListSnapshot>
     .filter((item): item is MonitorItem => item !== undefined);
 
   if (items.length === 0) {
-    throw new Error("RSSから有効な item/link を抽出できませんでした");
+    throw new Error(`RSSから有効な item/link を抽出できませんでした${formatEmptyFeedDetail(root)}`);
   }
 
   return { kind: "list", items };
