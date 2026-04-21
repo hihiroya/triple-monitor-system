@@ -159,7 +159,7 @@ async function buildXAuth(source: XProfileSource): Promise<XAuth> {
   const cookie = mergeSetCookies(initialCookie, getSetCookieHeaders(response.headers));
   const csrfToken = parseCookieHeader(cookie).get("ct0");
   if (!csrfToken) {
-    throw new Error("X profile monitor could not obtain ct0 cookie from auth_token");
+    throw new Error("X profile monitor could not obtain csrf cookie");
   }
   return { cookie, csrfToken, html };
 }
@@ -490,8 +490,8 @@ function sortByTimestampDesc(items: MonitorItem[]): MonitorItem[] {
 /**
  * X profile の Web API から本人の親ポストと、設定に応じて RT を抽出する。
  *
- * RSSHub の Web API 実装と同じく UserByScreenName と profile timeline を使うが、
- * ページングや検索は行わず、返信を除外して API 呼び出し数と誤通知を抑える。
+ * profile timeline を使うが、ページングや検索は行わず、
+ * 返信を除外して API 呼び出し数と誤通知を抑える。
  */
 export async function fetchXProfileSnapshot(source: XProfileSource): Promise<ListSnapshot> {
   const maxItems = clampMaxItems(source.maxItems);
