@@ -62,7 +62,7 @@
   {
     "key": "revuestarlight-x-profile",
     "type": "x_profile_poll",
-    "label": "少女☆歌劇 レヴュースタァライト X Profile",
+    "label": "少女☆歌劇 レヴュースタァライト X",
     "screenName": "revuestarlight",
     "xAuthTokenEnvName": "TWITTER_AUTH_TOKEN",
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
