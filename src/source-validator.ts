@@ -1,6 +1,8 @@
 import type {
+  HtmlPaginationConfig,
   MonitorSource,
   NotionDatabaseSource,
+  PaginationStrategyName,
   PublicHtmlListSource,
   RssSource,
   SelectorStrategyName,
@@ -15,7 +17,11 @@ const SOURCE_TYPES: readonly SourceType[] = [
   "notion_api_database_poll",
   "public_html_list_poll"
 ];
-const SELECTOR_STRATEGIES: readonly SelectorStrategyName[] = ["revuestarlight_news_list"];
+const SELECTOR_STRATEGIES: readonly SelectorStrategyName[] = [
+  "revuestarlight_news_list",
+  "walkerplus_event_list"
+];
+const PAGINATION_STRATEGIES: readonly PaginationStrategyName[] = ["walkerplus_event_list_pages"];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -113,6 +119,38 @@ function optionalBoolean(record: Record<string, unknown>, field: string): boolea
     throw new Error(`${field} は boolean である必要があります`);
   }
   return value;
+}
+
+function optionalMaxPages(record: Record<string, unknown>, field: string): number | undefined {
+  const value = record[field];
+  if (value === undefined) {
+    return undefined;
+  }
+  if (typeof value !== "number" || !Number.isInteger(value) || value < 1 || value > 20) {
+    throw new Error(`${field} は 1 以上 20 以下の整数である必要があります`);
+  }
+  return value;
+}
+
+function optionalPagination(record: Record<string, unknown>): HtmlPaginationConfig | undefined {
+  const value = record.pagination;
+  if (value === undefined) {
+    return undefined;
+  }
+  if (!isRecord(value)) {
+    throw new Error("pagination は object である必要があります");
+  }
+
+  const strategy = requireString(value, "strategy");
+  if (!PAGINATION_STRATEGIES.includes(strategy as PaginationStrategyName)) {
+    throw new Error(`未許可の pagination strategy です: ${strategy}`);
+  }
+
+  const pagination: HtmlPaginationConfig = {
+    strategy: strategy as PaginationStrategyName
+  };
+  const maxPages = optionalMaxPages(value, "maxPages");
+  return maxPages === undefined ? pagination : { ...pagination, maxPages };
 }
 
 function requireScreenName(record: Record<string, unknown>): string {
@@ -222,6 +260,10 @@ function validateSource(value: unknown, index: number, seenKeys: Set<string>): M
     url: requireHttpUrl(value, "url"),
     selectorStrategy: strategy as SelectorStrategyName
   };
-  const maxItems = optionalMaxItems(value);
-  return maxItems === undefined ? source : { ...source, maxItems };
+  const withMaxItems = (() => {
+    const maxItems = optionalMaxItems(value);
+    return maxItems === undefined ? source : { ...source, maxItems };
+  })();
+  const pagination = optionalPagination(value);
+  return pagination === undefined ? withMaxItems : { ...withMaxItems, pagination };
 }

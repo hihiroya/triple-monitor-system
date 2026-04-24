@@ -1,10 +1,29 @@
-import { readFile } from "node:fs/promises";
 import { pathToFileURL } from "node:url";
-import { getSourcesPath } from "./config.js";
+import { loadConfiguredSources } from "./config.js";
 import { logger } from "./logger.js";
 import { loadState } from "./state.js";
-import { validateSources } from "./source-validator.js";
 import { asErrorMessage } from "./utils.js";
+
+const REPOSITORY_SOURCES_PATHS = "config/default-sources.json,config/tourism-sources.json";
+const REPOSITORY_STATE_PATHS = ["state/default-state.json", "state/tourism-state.json"] as const;
+
+async function withTemporaryEnv<T>(
+  name: string,
+  value: string,
+  action: () => Promise<T>
+): Promise<T> {
+  const originalValue = process.env[name];
+  process.env[name] = value;
+  try {
+    return await action();
+  } finally {
+    if (originalValue === undefined) {
+      delete process.env[name];
+    } else {
+      process.env[name] = originalValue;
+    }
+  }
+}
 
 /**
  * リポジトリに置かれている設定ファイルと state ファイルを検証する。
@@ -13,9 +32,20 @@ import { asErrorMessage } from "./utils.js";
  * CI の品質ゲートで実ファイルを先に検証する。
  */
 export async function validateRepositoryFiles(): Promise<void> {
-  const rawSources = await readFile(getSourcesPath(), "utf8");
-  validateSources(JSON.parse(rawSources) as unknown);
-  await loadState();
+  if (process.env.MONITOR_SOURCES_PATH) {
+    await loadConfiguredSources();
+  } else {
+    await withTemporaryEnv("MONITOR_SOURCES_PATH", REPOSITORY_SOURCES_PATHS, loadConfiguredSources);
+  }
+
+  if (process.env.MONITOR_STATE_PATH) {
+    await loadState();
+    return;
+  }
+
+  for (const statePath of REPOSITORY_STATE_PATHS) {
+    await withTemporaryEnv("MONITOR_STATE_PATH", statePath, loadState);
+  }
 }
 
 /**
@@ -29,7 +59,7 @@ function isCliEntryPoint(): boolean {
 if (isCliEntryPoint()) {
   void validateRepositoryFiles()
     .then(() => {
-      logger.info("config/sources.json と state/monitor-state.json の検証に成功しました");
+      logger.info("monitor sources と monitor state の検証に成功しました");
     })
     .catch((error) => {
       logger.error(`設定ファイル検証に失敗しました: ${asErrorMessage(error)}`);

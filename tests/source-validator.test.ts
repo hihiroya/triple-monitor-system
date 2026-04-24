@@ -69,6 +69,54 @@ describe("validateSources", () => {
     });
   });
 
+  it("walkerplus 用 selectorStrategy も受け付ける", () => {
+    const [source] = validateSources([
+      {
+        key: "walkerplus-art-events",
+        type: "public_html_list_poll",
+        label: "Walkerplus",
+        url: "https://www.walkerplus.com/event_list/ar0300/eg0107/",
+        webhookEnvName: "DISCORD_WEBHOOK_URL_TOURISM",
+        enabled: true,
+        selectorStrategy: "walkerplus_event_list",
+        maxItems: 10,
+        pagination: {
+          strategy: "walkerplus_event_list_pages",
+          maxPages: 5
+        }
+      }
+    ]);
+
+    expect(source).toMatchObject({
+      key: "walkerplus-art-events",
+      type: "public_html_list_poll",
+      selectorStrategy: "walkerplus_event_list",
+      pagination: {
+        strategy: "walkerplus_event_list_pages",
+        maxPages: 5
+      }
+    });
+  });
+
+  it("未許可の pagination strategy を拒否する", () => {
+    expect(() =>
+      validateSources([
+        {
+          key: "walkerplus-art-events",
+          type: "public_html_list_poll",
+          label: "Walkerplus",
+          url: "https://www.walkerplus.com/event_list/ar0300/eg0107/",
+          webhookEnvName: "DISCORD_WEBHOOK_URL_TOURISM",
+          enabled: true,
+          selectorStrategy: "walkerplus_event_list",
+          pagination: {
+            strategy: "unknown"
+          }
+        }
+      ])
+    ).toThrow("未許可の pagination strategy です");
+  });
+
   it("トップレベルが配列でない設定を拒否する", () => {
     expect(() => validateSources({ key: "rss-main" })).toThrow(
       "sources.json のトップレベルは配列である必要があります"

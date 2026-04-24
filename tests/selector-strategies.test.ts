@@ -82,4 +82,55 @@ describe("runSelectorStrategy", () => {
       }
     ]);
   });
+
+  it("walkerplus_event_list は一覧本体だけからイベント詳細リンクを抽出する", async () => {
+    const html = await readFile(
+      path.resolve("tests", "fixtures", "walkerplus-event-list.html"),
+      "utf8"
+    );
+
+    const items = runSelectorStrategy(
+      "walkerplus_event_list",
+      html,
+      "https://www.walkerplus.com/event_list/ar0300/eg0107/",
+      10
+    );
+
+    expect(items).toEqual([
+      {
+        id: "https://www.walkerplus.com/event/ar0313e583830/",
+        title: "クロード・モネ ー風景への問いかけ",
+        url: "https://www.walkerplus.com/event/ar0313e583830/"
+      },
+      {
+        id: "https://www.walkerplus.com/event/ar0313e558982/",
+        title: "あそぼうよ！五味太郎 えほんの世界展",
+        url: "https://www.walkerplus.com/event/ar0313e558982/"
+      },
+      {
+        id: "https://www.walkerplus.com/event/ar0313e583109/",
+        title: "サンリオ展 FINAL ver.(ファイナル バージョン) ニッポンのカワイイ文化60年史",
+        url: "https://www.walkerplus.com/event/ar0313e583109/"
+      }
+    ]);
+  });
+
+  it("walkerplus_event_list は maxItems を超えて抽出しない", async () => {
+    const html = await readFile(
+      path.resolve("tests", "fixtures", "walkerplus-event-list.html"),
+      "utf8"
+    );
+
+    const items = runSelectorStrategy(
+      "walkerplus_event_list",
+      html,
+      "https://www.walkerplus.com/event_list/ar0300/eg0107/",
+      2
+    );
+
+    expect(items.map((item) => item.id)).toEqual([
+      "https://www.walkerplus.com/event/ar0313e583830/",
+      "https://www.walkerplus.com/event/ar0313e558982/"
+    ]);
+  });
 });

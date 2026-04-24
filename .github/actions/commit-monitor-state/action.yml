@@ -1,5 +1,5 @@
 name: Commit monitor state
-description: Commit and push monitor-state.json when it changed.
+description: Commit and push a monitor state file when it changed.
 
 inputs:
   commit-message:
@@ -8,7 +8,7 @@ inputs:
   state-path:
     description: Path to the monitor state file.
     required: false
-    default: state/monitor-state.json
+    default: state/default-state.json
 
 runs:
   using: composite

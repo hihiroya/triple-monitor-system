@@ -24,8 +24,8 @@ describe("quality gate helpers", () => {
     vi.restoreAllMocks();
   });
 
-  it("loadSources は実際の sources.json を検証し、enabled な source だけ返す", async () => {
-    const rawSources = JSON.parse(await readFile("config/sources.json", "utf8")) as unknown;
+  it("loadSources は実際の default sources を検証し、enabled な source だけ返す", async () => {
+    const rawSources = JSON.parse(await readFile("config/default-sources.json", "utf8")) as unknown;
     const expectedSources = validateSources(rawSources).filter((source) => source.enabled);
 
     await expect(loadSources()).resolves.toEqual(expectedSources);
@@ -94,7 +94,8 @@ describe("quality gate helpers", () => {
       ".github/workflows/x-profile-monitor.yml",
       ".github/workflows/notion-monitor.yml",
       ".github/workflows/public-site-monitor.yml",
-      ".github/workflows/x-twitter-monitor.yml"
+      ".github/workflows/x-twitter-monitor.yml",
+      ".github/workflows/tourism-monitor.yml"
     ];
 
     for (const workflowPath of workflowPaths) {
@@ -138,7 +139,7 @@ describe("quality gate helpers", () => {
   });
 
   it("X/Twitter RSS source は Actions 内の RSSHub だけを参照する", async () => {
-    const rawSources = JSON.parse(await readFile("config/sources.json", "utf8")) as unknown;
+    const rawSources = JSON.parse(await readFile("config/default-sources.json", "utf8")) as unknown;
     const sources = validateSources(rawSources);
     const twitterSources = sources
       .filter(isRssSource)
@@ -158,7 +159,7 @@ describe("quality gate helpers", () => {
   });
 
   it("通常 RSS source は X/Twitter と別 group で実行される", async () => {
-    const rawSources = JSON.parse(await readFile("config/sources.json", "utf8")) as unknown;
+    const rawSources = JSON.parse(await readFile("config/default-sources.json", "utf8")) as unknown;
     const sources = validateSources(rawSources);
     const standardRssSources = sources
       .filter(isRssSource)
@@ -200,5 +201,37 @@ describe("quality gate helpers", () => {
     expect(snapshot.kind).toBe("list");
     expect(snapshot.items).toHaveLength(2);
     expect(snapshot.items[0]?.url).toMatch(/^https:\/\/revuestarlight\.com\/news\//);
+  });
+
+  it("fetchPublicHtmlSnapshot は walkerplus fixture から一覧 item を作る", async () => {
+    const html = await readFile("tests/fixtures/walkerplus-event-list.html", "utf8");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(html, {
+            status: 200,
+            headers: { "Content-Type": "text/html" }
+          })
+        )
+      )
+    );
+
+    const source: PublicHtmlListSource = {
+      key: "walkerplus-art-events",
+      type: "public_html_list_poll",
+      label: "Walkerplus 関東の美術展・博物展",
+      url: "https://www.walkerplus.com/event_list/ar0300/eg0107/",
+      webhookEnvName: "DISCORD_WEBHOOK_URL_TOURISM",
+      enabled: true,
+      maxItems: 2,
+      selectorStrategy: "walkerplus_event_list"
+    };
+
+    const snapshot = await fetchPublicHtmlSnapshot(source);
+
+    expect(snapshot.kind).toBe("list");
+    expect(snapshot.items).toHaveLength(2);
+    expect(snapshot.items[0]?.url).toMatch(/^https:\/\/www\.walkerplus\.com\/event\//);
   });
 });

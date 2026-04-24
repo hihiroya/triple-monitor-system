@@ -4,6 +4,57 @@ import { normalizeWhitespace, toAbsoluteUrl } from "./utils.js";
 
 type SelectorStrategy = (html: string, baseUrl: string, maxItems: number) => MonitorItem[];
 
+interface ScopedAnchorRule {
+  itemSelector: string;
+  hrefPrefix: string;
+  titleSelector?: string;
+}
+
+function collectScopedAnchorItems(
+  html: string,
+  baseUrl: string,
+  maxItems: number,
+  rule: ScopedAnchorRule
+): MonitorItem[] {
+  const $ = cheerio.load(html);
+  const seen = new Set<string>();
+  const items: MonitorItem[] = [];
+
+  $(rule.itemSelector).each((_, element) => {
+    if (items.length >= maxItems) {
+      return false;
+    }
+
+    const container = $(element);
+    const link = container.find(`a[href^="${rule.hrefPrefix}"]`).first();
+    const href = link.attr("href");
+    if (!href) {
+      return;
+    }
+
+    const absoluteUrl = toAbsoluteUrl(href, baseUrl);
+    if (!absoluteUrl || seen.has(absoluteUrl)) {
+      return;
+    }
+
+    const titleSource =
+      rule.titleSelector === undefined ? link : container.find(rule.titleSelector).first();
+    const title = normalizeWhitespace(titleSource.text()) || normalizeWhitespace(link.text());
+    if (!title) {
+      return;
+    }
+
+    seen.add(absoluteUrl);
+    items.push({
+      id: absoluteUrl,
+      title,
+      url: absoluteUrl
+    });
+  });
+
+  return items;
+}
+
 function revuestarlightNewsList(html: string, baseUrl: string, maxItems: number): MonitorItem[] {
   const $ = cheerio.load(html);
   const base = new URL(baseUrl);
@@ -51,8 +102,17 @@ function revuestarlightNewsList(html: string, baseUrl: string, maxItems: number)
   return items;
 }
 
+function walkerplusEventList(html: string, baseUrl: string, maxItems: number): MonitorItem[] {
+  return collectScopedAnchorItems(html, baseUrl, maxItems, {
+    itemSelector: ".m-mainlist__list > li.m-mainlist__item",
+    hrefPrefix: "/event/",
+    titleSelector: ".m-mainlist-item__ttl"
+  });
+}
+
 const STRATEGIES: Record<SelectorStrategyName, SelectorStrategy> = {
-  revuestarlight_news_list: revuestarlightNewsList
+  revuestarlight_news_list: revuestarlightNewsList,
+  walkerplus_event_list: walkerplusEventList
 };
 
 /**

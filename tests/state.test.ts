@@ -24,6 +24,18 @@ describe("state", () => {
     await expect(loadState()).resolves.toEqual({ sources: {} });
   });
 
+  it("MONITOR_STATE_PATH が複数指定された場合は先頭ファイルを使う", async () => {
+    const secondPath = path.join(tempDir, "second-state.json");
+    process.env.MONITOR_STATE_PATH = `${statePath},${secondPath}`;
+
+    await saveState({ sources: { first: { lastSeenItemId: "item-1" } } });
+
+    await expect(loadState()).resolves.toEqual({
+      sources: { first: { lastSeenItemId: "item-1" } }
+    });
+    await expect(readFile(secondPath, "utf8")).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
   it("既存 state を読み込み、seenItemIds は文字列だけに正規化する", async () => {
     await writeFile(
       statePath,

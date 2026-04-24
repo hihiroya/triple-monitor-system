@@ -22,7 +22,8 @@
     "monitor:x-twitter": "node dist/main.js --type rss --group x-twitter",
     "monitor:x-profile": "node dist/main.js --type x_profile_poll --group x-profile",
     "monitor:notion": "node dist/main.js --group notion",
-    "monitor:public-html": "node dist/main.js --type public_html_list_poll"
+    "monitor:public-html": "node dist/main.js --type public_html_list_poll",
+    "monitor:tourism": "node dist/main.js --group tourism-events"
   },
   "engines": {
     "node": ">=24"

@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: monitor-state
+  group: default-monitor-state
   cancel-in-progress: false
 
 jobs:
@@ -56,6 +56,8 @@ jobs:
       - name: Run Notion monitor
         id: monitor
         env:
+          MONITOR_SOURCES_PATH: config/default-sources.json
+          MONITOR_STATE_PATH: state/default-state.json
           DISCORD_WEBHOOK_URL_MAIN: ${{ secrets.DISCORD_WEBHOOK_URL_MAIN }}
           NOTION_TOKEN_MAIN: ${{ secrets.NOTION_TOKEN_MAIN }}
         run: npm run monitor:notion
@@ -65,3 +67,4 @@ jobs:
         uses: ./.github/actions/commit-monitor-state
         with:
           commit-message: Update Notion monitor state
+          state-path: state/default-state.json

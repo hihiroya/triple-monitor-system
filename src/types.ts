@@ -41,13 +41,21 @@ export interface NotionDatabaseSource extends BaseSource {
   notionTokenEnvName: string;
 }
 
-export type SelectorStrategyName = "revuestarlight_news_list";
+export type SelectorStrategyName = "revuestarlight_news_list" | "walkerplus_event_list";
+
+export type PaginationStrategyName = "walkerplus_event_list_pages";
+
+export interface HtmlPaginationConfig {
+  strategy: PaginationStrategyName;
+  maxPages?: number;
+}
 
 export interface PublicHtmlListSource extends BaseSource {
   type: "public_html_list_poll";
   url: string;
   maxItems?: number;
   selectorStrategy: SelectorStrategyName;
+  pagination?: HtmlPaginationConfig;
 }
 
 export type MonitorSource =

@@ -1,15 +1,15 @@
-name: Public Site Monitor
+name: Tourism Monitor
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "17 * * * *"
   workflow_dispatch:
 
 permissions:
   contents: write
 
 concurrency:
-  group: default-monitor-state
+  group: tourism-monitor-state
   cancel-in-progress: false
 
 jobs:
@@ -34,17 +34,17 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Run public HTML monitor
+      - name: Run tourism monitor
         id: monitor
         env:
-          MONITOR_SOURCES_PATH: config/default-sources.json
-          MONITOR_STATE_PATH: state/default-state.json
-          DISCORD_WEBHOOK_URL_MAIN: ${{ secrets.DISCORD_WEBHOOK_URL_MAIN }}
-        run: npm run monitor:public-html
+          MONITOR_SOURCES_PATH: config/tourism-sources.json
+          MONITOR_STATE_PATH: state/tourism-state.json
+          DISCORD_WEBHOOK_URL_TOURISM: ${{ secrets.DISCORD_WEBHOOK_URL_TOURISM }}
+        run: npm run monitor:tourism
 
       - name: Commit state
         if: always() && steps.monitor.outcome != 'skipped'
         uses: ./.github/actions/commit-monitor-state
         with:
-          commit-message: Update public site monitor state
-          state-path: state/default-state.json
+          commit-message: Update tourism monitor state
+          state-path: state/tourism-state.json

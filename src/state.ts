@@ -1,14 +1,20 @@
 import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { resolveMonitorPaths } from "./paths.js";
 import type { MonitorState, SourceState } from "./types.js";
 
 /**
  * state ファイルの保存先を返す。
  *
- * 通常運用ではリポジトリ内の state を使い、テストでは環境変数で一時パスへ逃がす。
+ * `MONITOR_STATE_PATH=state/a.json,state/b.json` のように複数指定された場合も、
+ * 実行時に更新する state は先頭ファイルだけを使う。
  */
 function getStatePath(): string {
-  return path.resolve(process.env.MONITOR_STATE_PATH ?? path.join("state", "monitor-state.json"));
+  const [statePath] = resolveMonitorPaths(process.env.MONITOR_STATE_PATH, "state");
+  if (!statePath) {
+    throw new Error("state path が解決できませんでした");
+  }
+  return statePath;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -51,14 +57,18 @@ function validateState(value: unknown): MonitorState {
  * 監視の安全性を優先して失敗させる。
  */
 export async function loadState(): Promise<MonitorState> {
+  const statePath = getStatePath();
   try {
-    const raw = await readFile(getStatePath(), "utf8");
+    const raw = await readFile(statePath, "utf8");
     return validateState(JSON.parse(raw) as unknown);
   } catch (error) {
     if (error instanceof Error && "code" in error && error.code === "ENOENT") {
       return { sources: {} };
     }
-    throw error;
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(`state file の読み込みまたは検証に失敗しました: ${statePath}: ${message}`, {
+      cause: error
+    });
   }
 }
 

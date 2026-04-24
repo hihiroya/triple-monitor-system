@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: monitor-state
+  group: default-monitor-state
   cancel-in-progress: false
 
 jobs:
@@ -37,6 +37,8 @@ jobs:
       - name: Run RSS monitor
         id: monitor
         env:
+          MONITOR_SOURCES_PATH: config/default-sources.json
+          MONITOR_STATE_PATH: state/default-state.json
           DISCORD_WEBHOOK_URL_MAIN: ${{ secrets.DISCORD_WEBHOOK_URL_MAIN }}
         run: npm run monitor:rss:standard
 
@@ -45,3 +47,4 @@ jobs:
         uses: ./.github/actions/commit-monitor-state
         with:
           commit-message: Update RSS monitor state
+          state-path: state/default-state.json

@@ -1,0 +1,17 @@
+[
+  {
+    "key": "walkerplus-kanto-art-events",
+    "type": "public_html_list_poll",
+    "label": "Walkerplus 関東の美術展・博物展",
+    "url": "https://www.walkerplus.com/event_list/ar0300/eg0107/",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_TOURISM",
+    "enabled": true,
+    "group": "tourism-events",
+    "maxItems": 50,
+    "selectorStrategy": "walkerplus_event_list",
+    "pagination": {
+      "strategy": "walkerplus_event_list_pages",
+      "maxPages": 5
+    }
+  }
+]
