@@ -266,4 +266,36 @@ describe("quality gate helpers", () => {
     expect(snapshot.items).toHaveLength(2);
     expect(snapshot.items[0]?.url).toMatch(/^https:\/\/artscape\.jp\/exhibitions\/\d+\/$/);
   });
+
+  it("fetchPublicHtmlSnapshot は Science Portal fixture から一覧 item を作る", async () => {
+    const html = await readFile("tests/fixtures/scienceportal-event-list.html", "utf8");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(html, {
+            status: 200,
+            headers: { "Content-Type": "text/html" }
+          })
+        )
+      )
+    );
+
+    const source: PublicHtmlListSource = {
+      key: "scienceportal-exhibition-events",
+      type: "public_html_list_poll",
+      label: "Science Portal 展示・イベント",
+      url: "https://scienceportal.jst.go.jp/events/?s_held_month=all&s_category=exhibition,event&exclude_finished",
+      webhookEnvName: "DISCORD_WEBHOOK_URL_TOURISM",
+      enabled: true,
+      maxItems: 2,
+      selectorStrategy: "scienceportal_event_list"
+    };
+
+    const snapshot = await fetchPublicHtmlSnapshot(source);
+
+    expect(snapshot.kind).toBe("list");
+    expect(snapshot.items).toHaveLength(2);
+    expect(snapshot.items[0]?.url).toMatch(/^https:\/\/scienceportal\.jst\.go\.jp\/events\/\d+\/$/);
+  });
 });

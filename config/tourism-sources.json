@@ -43,5 +43,16 @@
       "strategy": "artscape_exhibition_list_pages",
       "maxPages": 5
     }
+  },
+  {
+    "key": "scienceportal-exhibition-events",
+    "type": "public_html_list_poll",
+    "label": "Science Portal 展示・イベント",
+    "url": "https://scienceportal.jst.go.jp/events/?s_held_month=all&s_category=exhibition,event&exclude_finished",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_TOURISM",
+    "enabled": true,
+    "group": "tourism-events",
+    "maxItems": 75,
+    "selectorStrategy": "scienceportal_event_list"
   }
 ]

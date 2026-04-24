@@ -45,7 +45,8 @@ export type SelectorStrategyName =
   | "revuestarlight_news_list"
   | "walkerplus_event_list"
   | "enjoytokyo_event_list"
-  | "artscape_exhibition_list";
+  | "artscape_exhibition_list"
+  | "scienceportal_event_list";
 
 export type PaginationStrategyName =
   | "walkerplus_event_list_pages"

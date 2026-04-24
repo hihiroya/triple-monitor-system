@@ -227,4 +227,55 @@ describe("runSelectorStrategy", () => {
 
     expect(items.map((item) => item.id)).toEqual(["https://artscape.jp/exhibitions/67441/"]);
   });
+
+  it("scienceportal_event_list は埋め込みイベントデータから未終了の展示・イベントだけを抽出する", async () => {
+    const html = await readFile(
+      path.resolve("tests", "fixtures", "scienceportal-event-list.html"),
+      "utf8"
+    );
+
+    const items = runSelectorStrategy(
+      "scienceportal_event_list",
+      html,
+      "https://scienceportal.jst.go.jp/events/?s_held_month=all&s_category=exhibition,event&exclude_finished",
+      10
+    );
+
+    expect(items).toEqual([
+      {
+        id: "https://scienceportal.jst.go.jp/events/19447/",
+        title: "AI時代のアーキテクチャ設計 2026.05.21 東京都",
+        url: "https://scienceportal.jst.go.jp/events/19447/"
+      },
+      {
+        id: "https://scienceportal.jst.go.jp/events/19446/",
+        title: "JAXA エアロスペーススクール2026 参加者募集 2026.07.22 - 2026.08.18 全国",
+        url: "https://scienceportal.jst.go.jp/events/19446/"
+      },
+      {
+        id: "https://scienceportal.jst.go.jp/events/19420/",
+        title: "科学展示 2026.06.01 - 2026.06.30 大阪府",
+        url: "https://scienceportal.jst.go.jp/events/19420/"
+      }
+    ]);
+  });
+
+  it("scienceportal_event_list は maxItems を超えて抽出しない", async () => {
+    const html = await readFile(
+      path.resolve("tests", "fixtures", "scienceportal-event-list.html"),
+      "utf8"
+    );
+
+    const items = runSelectorStrategy(
+      "scienceportal_event_list",
+      html,
+      "https://scienceportal.jst.go.jp/events/",
+      2
+    );
+
+    expect(items.map((item) => item.id)).toEqual([
+      "https://scienceportal.jst.go.jp/events/19447/",
+      "https://scienceportal.jst.go.jp/events/19446/"
+    ]);
+  });
 });

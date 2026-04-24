@@ -156,6 +156,27 @@ describe("validateSources", () => {
     });
   });
 
+  it("Science Portal 用 selectorStrategy も受け付ける", () => {
+    const [source] = validateSources([
+      {
+        key: "scienceportal-exhibition-events",
+        type: "public_html_list_poll",
+        label: "Science Portal",
+        url: "https://scienceportal.jst.go.jp/events/?s_held_month=all&s_category=exhibition,event&exclude_finished",
+        webhookEnvName: "DISCORD_WEBHOOK_URL_TOURISM",
+        enabled: true,
+        selectorStrategy: "scienceportal_event_list",
+        maxItems: 75
+      }
+    ]);
+
+    expect(source).toMatchObject({
+      key: "scienceportal-exhibition-events",
+      type: "public_html_list_poll",
+      selectorStrategy: "scienceportal_event_list"
+    });
+  });
+
   it("未許可の pagination strategy を拒否する", () => {
     expect(() =>
       validateSources([

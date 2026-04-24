@@ -27,6 +27,28 @@ interface JsonLdItemList {
   itemListElement?: unknown;
 }
 
+interface SciencePortalEventCategory {
+  slug?: unknown;
+  name?: unknown;
+}
+
+interface SciencePortalEventDate {
+  start?: unknown;
+  end?: unknown;
+}
+
+interface SciencePortalEvent {
+  link?: unknown;
+  title?: unknown;
+  category?: unknown;
+  date?: unknown;
+  organizer?: unknown;
+  location?: unknown;
+  "start-date"?: unknown;
+  "end-date"?: unknown;
+  is_finished?: unknown;
+}
+
 function collectScopedAnchorItems(
   html: string,
   baseUrl: string,
@@ -123,6 +145,92 @@ function parseJsonLdItemLists(html: string): JsonLdItemList[] {
   });
 
   return lists;
+}
+
+function extractBalancedJsonArray(text: string, marker: string): string | undefined {
+  const markerIndex = text.indexOf(marker);
+  if (markerIndex === -1) {
+    return undefined;
+  }
+
+  const startIndex = text.indexOf("[", markerIndex + marker.length);
+  if (startIndex === -1) {
+    return undefined;
+  }
+
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let index = startIndex; index < text.length; index += 1) {
+    const char = text[index];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (char === "\\") {
+      escaped = inString;
+      continue;
+    }
+
+    if (char === '"') {
+      inString = !inString;
+      continue;
+    }
+
+    if (inString) {
+      continue;
+    }
+
+    if (char === "[") {
+      depth += 1;
+      continue;
+    }
+
+    if (char === "]") {
+      depth -= 1;
+      if (depth === 0) {
+        return text.slice(startIndex, index + 1);
+      }
+    }
+  }
+
+  return undefined;
+}
+
+function parseSciencePortalEvents(html: string): SciencePortalEvent[] {
+  const $ = cheerio.load(html);
+
+  for (const element of $("script").toArray()) {
+    const script = $(element).text();
+    const rawJson = extractBalancedJsonArray(script, "var events = fillterEvents(condition,");
+    if (!rawJson) {
+      continue;
+    }
+
+    const parsed = JSON.parse(rawJson) as unknown;
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed.filter(isRecord) as SciencePortalEvent[];
+  }
+
+  return [];
+}
+
+function getSciencePortalEventId(url: string): number {
+  const match = /\/events\/(?<id>\d+)\/$/.exec(new URL(url).pathname);
+  return match?.groups?.id ? Number(match.groups.id) : 0;
+}
+
+function getSciencePortalDateLabel(date: SciencePortalEventDate): string | undefined {
+  const start = Array.isArray(date.start) && typeof date.start[0] === "string" ? date.start[0] : "";
+  const end = Array.isArray(date.end) && typeof date.end[0] === "string" ? date.end[0] : "";
+  if (!start) {
+    return undefined;
+  }
+  return end && end !== start ? `${start} - ${end}` : start;
 }
 
 function revuestarlightNewsList(html: string, baseUrl: string, maxItems: number): MonitorItem[] {
@@ -275,11 +383,75 @@ function artscapeExhibitionList(html: string, baseUrl: string, maxItems: number)
   return items;
 }
 
+function scienceportalEventList(html: string, baseUrl: string, maxItems: number): MonitorItem[] {
+  const items: MonitorItem[] = [];
+  const seen = new Set<string>();
+  const allowedCategorySlugs = new Set(["exhibition", "event"]);
+
+  const events = parseSciencePortalEvents(html)
+    .filter((event) => event.is_finished !== true)
+    .filter((event) => {
+      if (!isRecord(event.category)) {
+        return false;
+      }
+      const category = event.category as SciencePortalEventCategory;
+      return typeof category.slug === "string" && allowedCategorySlugs.has(category.slug);
+    })
+    .sort((a, b) => {
+      const aLink = typeof a.link === "string" ? a.link : "";
+      const bLink = typeof b.link === "string" ? b.link : "";
+      return getSciencePortalEventId(bLink) - getSciencePortalEventId(aLink);
+    });
+
+  for (const event of events) {
+    if (items.length >= maxItems) {
+      break;
+    }
+    if (typeof event.link !== "string" || typeof event.title !== "string") {
+      continue;
+    }
+
+    const absoluteUrl = toAbsoluteUrl(event.link, baseUrl);
+    if (!absoluteUrl || seen.has(absoluteUrl)) {
+      continue;
+    }
+
+    const url = new URL(absoluteUrl);
+    if (
+      url.origin !== "https://scienceportal.jst.go.jp" ||
+      !/^\/events\/\d+\/$/.test(url.pathname)
+    ) {
+      continue;
+    }
+
+    const titleParts = [event.title];
+    if (isRecord(event.date)) {
+      const dateLabel = getSciencePortalDateLabel(event.date as SciencePortalEventDate);
+      if (dateLabel) {
+        titleParts.push(dateLabel);
+      }
+    }
+    if (typeof event.location === "string" && event.location) {
+      titleParts.push(event.location);
+    }
+
+    seen.add(absoluteUrl);
+    items.push({
+      id: absoluteUrl,
+      title: normalizeWhitespace(titleParts.join(" ")),
+      url: absoluteUrl
+    });
+  }
+
+  return items;
+}
+
 const STRATEGIES: Record<SelectorStrategyName, SelectorStrategy> = {
   revuestarlight_news_list: revuestarlightNewsList,
   walkerplus_event_list: walkerplusEventList,
   enjoytokyo_event_list: enjoytokyoEventList,
-  artscape_exhibition_list: artscapeExhibitionList
+  artscape_exhibition_list: artscapeExhibitionList,
+  scienceportal_event_list: scienceportalEventList
 };
 
 /**
