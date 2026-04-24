@@ -13,7 +13,7 @@ import type {
 } from "./types.js";
 import { asErrorMessage } from "./utils.js";
 
-const SEEN_ITEM_HISTORY_LIMIT = 50;
+const SEEN_ITEM_HISTORY_LIMIT = 100;
 
 function isYoutubeRssSource(source: MonitorSource): boolean {
   if (source.type !== "rss") {
@@ -145,8 +145,15 @@ function findNewItems(items: MonitorItem[], seenItemIds: string[]): MonitorItem[
   }
 
   const seen = new Set(seenItemIds);
-  const hasSeenIntersection = items.some((item) => seen.has(item.id));
-  if (!hasSeenIntersection) {
+  let lastSeenIndex = -1;
+  for (let index = items.length - 1; index >= 0; index -= 1) {
+    const item = items[index];
+    if (item && seen.has(item.id)) {
+      lastSeenIndex = index;
+      break;
+    }
+  }
+  if (lastSeenIndex === -1) {
     // 既読履歴と取得結果が交差しない場合は、順序変更や取得窓落ちの疑いがある。
     // 全件通知すると重複通知になり得るため、運用者が確認できるよう source 失敗にする。
     throw new Error(
@@ -154,7 +161,10 @@ function findNewItems(items: MonitorItem[], seenItemIds: string[]): MonitorItem[
     );
   }
 
-  return items.filter((item) => !seen.has(item.id)).reverse();
+  return items
+    .slice(0, lastSeenIndex + 1)
+    .filter((item) => !seen.has(item.id))
+    .reverse();
 }
 
 /**
@@ -257,7 +267,7 @@ async function runListSource(
   if (newItems.length === 0) {
     state.sources[source.key] = {
       lastSeenItemId: latestItem.id,
-      seenItemIds: rememberSeenItems(previousSeenItemIds, alreadySeenItemIds)
+      seenItemIds: rememberSeenItems(itemIds, previousSeenItemIds)
     };
     return {
       key: source.key,
@@ -280,7 +290,7 @@ async function runListSource(
 
   state.sources[source.key] = {
     lastSeenItemId: latestItem.id,
-    seenItemIds: rememberSeenItems(currentSeenItemIds, alreadySeenItemIds)
+    seenItemIds: rememberSeenItems(itemIds, currentSeenItemIds)
   };
 
   return {

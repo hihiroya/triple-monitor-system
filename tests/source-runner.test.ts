@@ -166,7 +166,31 @@ describe("runSource", () => {
     expect(vi.mocked(notifyDiscord).mock.calls[0]?.[1]).toMatchObject({ id: "n" });
     expect(state.sources["rss-main"]).toEqual({
       lastSeenItemId: "a",
-      seenItemIds: ["n", "a", "b", "c"]
+      seenItemIds: ["a", "n", "b", "c"]
+    });
+  });
+
+  it("list source は既読範囲より古い未記録 item を新着扱いしない", async () => {
+    vi.mocked(fetchRssSnapshot).mockResolvedValue({
+      kind: "list",
+      items: [item("known-newest"), item("known-middle"), item("known-oldest"), item("older")]
+    });
+    const state: MonitorState = {
+      sources: {
+        "rss-main": {
+          lastSeenItemId: "known-newest",
+          seenItemIds: ["known-newest", "known-middle", "known-oldest"]
+        }
+      }
+    };
+
+    const result = await runSource(rssSource, state);
+
+    expect(result).toMatchObject({ ok: true, changed: false, message: "新着はありません" });
+    expect(notifyDiscord).not.toHaveBeenCalled();
+    expect(state.sources["rss-main"]).toEqual({
+      lastSeenItemId: "known-newest",
+      seenItemIds: ["known-newest", "known-middle", "known-oldest", "older"]
     });
   });
 
