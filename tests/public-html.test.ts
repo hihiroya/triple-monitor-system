@@ -95,6 +95,47 @@ describe("fetchPublicHtmlSnapshot", () => {
     ]);
   });
 
+  it("artscape のページ送り設定で paged クエリを付けて複数ページを集約する", async () => {
+    const page1 = await readFile("tests/fixtures/artscape-exhibition-list.html", "utf8");
+    const page2 = await readFile("tests/fixtures/artscape-exhibition-list-page-2.html", "utf8");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string | URL) => {
+        const url = String(input);
+        if (url === "https://artscape.jp/exhibitions/?area=kantou") {
+          return Promise.resolve(new Response(page1, { status: 200 }));
+        }
+        if (url === "https://artscape.jp/exhibitions/?area=kantou&paged=2") {
+          return Promise.resolve(new Response(page2, { status: 200 }));
+        }
+        return Promise.reject(new Error(`unexpected url ${url}`));
+      })
+    );
+
+    const source: PublicHtmlListSource = {
+      key: "artscape-kantou-exhibitions",
+      type: "public_html_list_poll",
+      label: "artscape 関東地方の展覧会・展示会",
+      url: "https://artscape.jp/exhibitions/?area=kantou",
+      webhookEnvName: "DISCORD_WEBHOOK_URL_TOURISM",
+      enabled: true,
+      selectorStrategy: "artscape_exhibition_list",
+      maxItems: 3,
+      pagination: {
+        strategy: "artscape_exhibition_list_pages",
+        maxPages: 2
+      }
+    };
+
+    const snapshot = await fetchPublicHtmlSnapshot(source);
+
+    expect(snapshot.items.map((item) => item.id)).toEqual([
+      "https://artscape.jp/exhibitions/67441/",
+      "https://artscape.jp/exhibitions/66742/",
+      "https://artscape.jp/exhibitions/65956/"
+    ]);
+  });
+
   it("追加ページの取得失敗は既に取得済みの item があれば部分取得で続行する", async () => {
     const page1 = await readFile("tests/fixtures/walkerplus-event-list.html", "utf8");
     vi.stubGlobal(

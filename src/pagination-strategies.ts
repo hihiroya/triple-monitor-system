@@ -24,9 +24,23 @@ function enjoytokyoEventListPages(baseUrl: string, maxPages: number): string[] {
   return urls;
 }
 
+function artscapeExhibitionListPages(baseUrl: string, maxPages: number): string[] {
+  const normalizedBaseUrl = new URL(baseUrl).toString();
+  const urls = [normalizedBaseUrl];
+
+  for (let page = 2; page <= maxPages; page += 1) {
+    const url = new URL(normalizedBaseUrl);
+    url.searchParams.set("paged", String(page));
+    urls.push(url.toString());
+  }
+
+  return urls;
+}
+
 const STRATEGIES: Record<PaginationStrategyName, PaginationStrategy> = {
   walkerplus_event_list_pages: walkerplusEventListPages,
-  enjoytokyo_event_list_pages: enjoytokyoEventListPages
+  enjoytokyo_event_list_pages: enjoytokyoEventListPages,
+  artscape_exhibition_list_pages: artscapeExhibitionListPages
 };
 
 export function buildPaginationUrls(

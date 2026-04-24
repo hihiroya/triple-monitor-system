@@ -127,6 +127,35 @@ describe("validateSources", () => {
     });
   });
 
+  it("artscape 用 selectorStrategy と pagination strategy も受け付ける", () => {
+    const [source] = validateSources([
+      {
+        key: "artscape-kantou-exhibitions",
+        type: "public_html_list_poll",
+        label: "artscape",
+        url: "https://artscape.jp/exhibitions/?area=kantou",
+        webhookEnvName: "DISCORD_WEBHOOK_URL_TOURISM",
+        enabled: true,
+        selectorStrategy: "artscape_exhibition_list",
+        maxItems: 75,
+        pagination: {
+          strategy: "artscape_exhibition_list_pages",
+          maxPages: 5
+        }
+      }
+    ]);
+
+    expect(source).toMatchObject({
+      key: "artscape-kantou-exhibitions",
+      type: "public_html_list_poll",
+      selectorStrategy: "artscape_exhibition_list",
+      pagination: {
+        strategy: "artscape_exhibition_list_pages",
+        maxPages: 5
+      }
+    });
+  });
+
   it("未許可の pagination strategy を拒否する", () => {
     expect(() =>
       validateSources([

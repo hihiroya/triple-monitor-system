@@ -226,10 +226,60 @@ function enjoytokyoEventList(html: string, baseUrl: string, maxItems: number): M
   return items;
 }
 
+function artscapeExhibitionList(html: string, baseUrl: string, maxItems: number): MonitorItem[] {
+  const $ = cheerio.load(html);
+  const seen = new Set<string>();
+  const items: MonitorItem[] = [];
+
+  $("article.item-article.item-exhibitions").each((_, element) => {
+    if (items.length >= maxItems) {
+      return false;
+    }
+
+    const container = $(element);
+    const link = container.find("h3.article-title a[href]").first();
+    const href = link.attr("href");
+    if (!href) {
+      return;
+    }
+
+    const absoluteUrl = toAbsoluteUrl(href, baseUrl);
+    if (!absoluteUrl || seen.has(absoluteUrl)) {
+      return;
+    }
+
+    const url = new URL(absoluteUrl);
+    if (url.origin !== "https://artscape.jp" || !/^\/exhibitions\/\d+\/$/.test(url.pathname)) {
+      return;
+    }
+
+    const title = normalizeWhitespace(link.text());
+    if (!title) {
+      return;
+    }
+
+    const period = container
+      .find("p")
+      .toArray()
+      .map((node) => normalizeWhitespace($(node).text()))
+      .find((text) => text.startsWith("会期："));
+
+    seen.add(absoluteUrl);
+    items.push({
+      id: absoluteUrl,
+      title: period ? `${title} ${period}` : title,
+      url: absoluteUrl
+    });
+  });
+
+  return items;
+}
+
 const STRATEGIES: Record<SelectorStrategyName, SelectorStrategy> = {
   revuestarlight_news_list: revuestarlightNewsList,
   walkerplus_event_list: walkerplusEventList,
-  enjoytokyo_event_list: enjoytokyoEventList
+  enjoytokyo_event_list: enjoytokyoEventList,
+  artscape_exhibition_list: artscapeExhibitionList
 };
 
 /**

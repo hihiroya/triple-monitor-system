@@ -28,5 +28,20 @@
       "strategy": "enjoytokyo_event_list_pages",
       "maxPages": 5
     }
+  },
+  {
+    "key": "artscape-kantou-exhibitions",
+    "type": "public_html_list_poll",
+    "label": "artscape 関東地方の展覧会・展示会",
+    "url": "https://artscape.jp/exhibitions/?area=kantou",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_TOURISM",
+    "enabled": true,
+    "group": "tourism-events",
+    "maxItems": 75,
+    "selectorStrategy": "artscape_exhibition_list",
+    "pagination": {
+      "strategy": "artscape_exhibition_list_pages",
+      "maxPages": 5
+    }
   }
 ]

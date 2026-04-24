@@ -234,4 +234,36 @@ describe("quality gate helpers", () => {
     expect(snapshot.items).toHaveLength(2);
     expect(snapshot.items[0]?.url).toMatch(/^https:\/\/www\.walkerplus\.com\/event\//);
   });
+
+  it("fetchPublicHtmlSnapshot は artscape fixture から一覧 item を作る", async () => {
+    const html = await readFile("tests/fixtures/artscape-exhibition-list.html", "utf8");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(html, {
+            status: 200,
+            headers: { "Content-Type": "text/html" }
+          })
+        )
+      )
+    );
+
+    const source: PublicHtmlListSource = {
+      key: "artscape-kantou-exhibitions",
+      type: "public_html_list_poll",
+      label: "artscape 関東地方の展覧会・展示会",
+      url: "https://artscape.jp/exhibitions/?area=kantou",
+      webhookEnvName: "DISCORD_WEBHOOK_URL_TOURISM",
+      enabled: true,
+      maxItems: 2,
+      selectorStrategy: "artscape_exhibition_list"
+    };
+
+    const snapshot = await fetchPublicHtmlSnapshot(source);
+
+    expect(snapshot.kind).toBe("list");
+    expect(snapshot.items).toHaveLength(2);
+    expect(snapshot.items[0]?.url).toMatch(/^https:\/\/artscape\.jp\/exhibitions\/\d+\/$/);
+  });
 });

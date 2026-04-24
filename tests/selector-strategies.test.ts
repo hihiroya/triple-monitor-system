@@ -184,4 +184,47 @@ describe("runSelectorStrategy", () => {
       "https://www.enjoytokyo.jp/event/1500577/"
     ]);
   });
+
+  it("artscape_exhibition_list は一覧本体だけから展覧会詳細リンクを抽出する", async () => {
+    const html = await readFile(
+      path.resolve("tests", "fixtures", "artscape-exhibition-list.html"),
+      "utf8"
+    );
+
+    const items = runSelectorStrategy(
+      "artscape_exhibition_list",
+      html,
+      "https://artscape.jp/exhibitions/?area=kantou",
+      10
+    );
+
+    expect(items).toEqual([
+      {
+        id: "https://artscape.jp/exhibitions/67441/",
+        title: "特集展示「モノと身体」 会期：2026年04月21日～2026年05月31日",
+        url: "https://artscape.jp/exhibitions/67441/"
+      },
+      {
+        id: "https://artscape.jp/exhibitions/66742/",
+        title: "97歳セツの新聞ちぎり絵 原画展 会期：2026年04月18日～2026年07月20日",
+        url: "https://artscape.jp/exhibitions/66742/"
+      }
+    ]);
+  });
+
+  it("artscape_exhibition_list は maxItems を超えて抽出しない", async () => {
+    const html = await readFile(
+      path.resolve("tests", "fixtures", "artscape-exhibition-list.html"),
+      "utf8"
+    );
+
+    const items = runSelectorStrategy(
+      "artscape_exhibition_list",
+      html,
+      "https://artscape.jp/exhibitions/?area=kantou",
+      1
+    );
+
+    expect(items.map((item) => item.id)).toEqual(["https://artscape.jp/exhibitions/67441/"]);
+  });
 });
