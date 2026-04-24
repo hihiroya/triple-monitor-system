@@ -183,6 +183,40 @@
         "https://artscape.jp/exhibitions/54403/",
         "https://artscape.jp/exhibitions/36104/"
       ]
+    },
+    "scienceportal-exhibition-events": {
+      "lastSeenItemId": "https://scienceportal.jst.go.jp/events/19447/",
+      "seenItemIds": [
+        "https://scienceportal.jst.go.jp/events/19447/",
+        "https://scienceportal.jst.go.jp/events/19446/",
+        "https://scienceportal.jst.go.jp/events/19445/",
+        "https://scienceportal.jst.go.jp/events/19444/",
+        "https://scienceportal.jst.go.jp/events/19443/",
+        "https://scienceportal.jst.go.jp/events/19442/",
+        "https://scienceportal.jst.go.jp/events/19441/",
+        "https://scienceportal.jst.go.jp/events/19440/",
+        "https://scienceportal.jst.go.jp/events/19439/",
+        "https://scienceportal.jst.go.jp/events/19438/",
+        "https://scienceportal.jst.go.jp/events/19437/",
+        "https://scienceportal.jst.go.jp/events/19436/",
+        "https://scienceportal.jst.go.jp/events/19435/",
+        "https://scienceportal.jst.go.jp/events/19434/",
+        "https://scienceportal.jst.go.jp/events/19433/",
+        "https://scienceportal.jst.go.jp/events/19431/",
+        "https://scienceportal.jst.go.jp/events/19429/",
+        "https://scienceportal.jst.go.jp/events/19427/",
+        "https://scienceportal.jst.go.jp/events/19426/",
+        "https://scienceportal.jst.go.jp/events/19425/",
+        "https://scienceportal.jst.go.jp/events/19424/",
+        "https://scienceportal.jst.go.jp/events/19420/",
+        "https://scienceportal.jst.go.jp/events/19417/",
+        "https://scienceportal.jst.go.jp/events/19416/",
+        "https://scienceportal.jst.go.jp/events/19408/",
+        "https://scienceportal.jst.go.jp/events/19400/",
+        "https://scienceportal.jst.go.jp/events/19392/",
+        "https://scienceportal.jst.go.jp/events/19391/",
+        "https://scienceportal.jst.go.jp/events/19372/"
+      ]
     }
   }
 }
