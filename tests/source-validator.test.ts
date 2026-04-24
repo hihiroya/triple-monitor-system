@@ -98,6 +98,35 @@ describe("validateSources", () => {
     });
   });
 
+  it("EnjoyTokyo 用 selectorStrategy と pagination strategy も受け付ける", () => {
+    const [source] = validateSources([
+      {
+        key: "enjoytokyo-tokyo-art-events",
+        type: "public_html_list_poll",
+        label: "レッツエンジョイ東京",
+        url: "https://www.enjoytokyo.jp/event/list/cat04/",
+        webhookEnvName: "DISCORD_WEBHOOK_URL_TOURISM",
+        enabled: true,
+        selectorStrategy: "enjoytokyo_event_list",
+        maxItems: 75,
+        pagination: {
+          strategy: "enjoytokyo_event_list_pages",
+          maxPages: 5
+        }
+      }
+    ]);
+
+    expect(source).toMatchObject({
+      key: "enjoytokyo-tokyo-art-events",
+      type: "public_html_list_poll",
+      selectorStrategy: "enjoytokyo_event_list",
+      pagination: {
+        strategy: "enjoytokyo_event_list_pages",
+        maxPages: 5
+      }
+    });
+  });
+
   it("未許可の pagination strategy を拒否する", () => {
     expect(() =>
       validateSources([

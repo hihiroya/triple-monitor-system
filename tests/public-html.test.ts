@@ -51,4 +51,47 @@ describe("fetchPublicHtmlSnapshot", () => {
       "https://www.walkerplus.com/event/ar0313e577379/"
     ]);
   });
+
+  it("EnjoyTokyo のページ送り設定で複数ページを集約する", async () => {
+    const page1 = await readFile("tests/fixtures/enjoytokyo-event-list.html", "utf8");
+    const page2 = await readFile("tests/fixtures/enjoytokyo-event-list-page-2.html", "utf8");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string | URL) => {
+        const url = String(input);
+        if (url.endsWith("/event/list/cat04/")) {
+          return Promise.resolve(new Response(page1, { status: 200 }));
+        }
+        if (url.endsWith("/event/list/cat04/2/")) {
+          return Promise.resolve(new Response(page2, { status: 200 }));
+        }
+        return Promise.reject(new Error(`unexpected url ${url}`));
+      })
+    );
+
+    const source: PublicHtmlListSource = {
+      key: "enjoytokyo-tokyo-art-events",
+      type: "public_html_list_poll",
+      label: "レッツエンジョイ東京 展示・展覧会",
+      url: "https://www.enjoytokyo.jp/event/list/cat04/",
+      webhookEnvName: "DISCORD_WEBHOOK_URL_TOURISM",
+      enabled: true,
+      selectorStrategy: "enjoytokyo_event_list",
+      maxItems: 5,
+      pagination: {
+        strategy: "enjoytokyo_event_list_pages",
+        maxPages: 2
+      }
+    };
+
+    const snapshot = await fetchPublicHtmlSnapshot(source);
+
+    expect(snapshot.items.map((item) => item.id)).toEqual([
+      "https://www.enjoytokyo.jp/event/2060940/",
+      "https://www.enjoytokyo.jp/event/1500577/",
+      "https://www.enjoytokyo.jp/event/2056459/",
+      "https://www.enjoytokyo.jp/event/2018932/",
+      "https://www.enjoytokyo.jp/event/2050000/"
+    ]);
+  });
 });

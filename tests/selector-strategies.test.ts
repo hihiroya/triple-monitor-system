@@ -133,4 +133,55 @@ describe("runSelectorStrategy", () => {
       "https://www.walkerplus.com/event/ar0313e558982/"
     ]);
   });
+
+  it("enjoytokyo_event_list は JSON-LD の本体一覧だけからイベントを抽出する", async () => {
+    const html = await readFile(
+      path.resolve("tests", "fixtures", "enjoytokyo-event-list.html"),
+      "utf8"
+    );
+
+    const items = runSelectorStrategy(
+      "enjoytokyo_event_list",
+      html,
+      "https://www.enjoytokyo.jp/event/list/cat04/",
+      10
+    );
+
+    expect(items).toEqual([
+      {
+        id: "https://www.enjoytokyo.jp/event/2060940/",
+        title: "口にできないチョコレート展 2026-04-10 - 2026-05-15",
+        url: "https://www.enjoytokyo.jp/event/2060940/"
+      },
+      {
+        id: "https://www.enjoytokyo.jp/event/1500577/",
+        title: "ミニチュア写真の世界展 2026 2026-04-10 - 2026-05-17",
+        url: "https://www.enjoytokyo.jp/event/1500577/"
+      },
+      {
+        id: "https://www.enjoytokyo.jp/event/2056459/",
+        title: "平成恋愛展 2026-04-07 - 2026-06-28",
+        url: "https://www.enjoytokyo.jp/event/2056459/"
+      }
+    ]);
+  });
+
+  it("enjoytokyo_event_list は maxItems を超えて抽出しない", async () => {
+    const html = await readFile(
+      path.resolve("tests", "fixtures", "enjoytokyo-event-list.html"),
+      "utf8"
+    );
+
+    const items = runSelectorStrategy(
+      "enjoytokyo_event_list",
+      html,
+      "https://www.enjoytokyo.jp/event/list/cat04/",
+      2
+    );
+
+    expect(items.map((item) => item.id)).toEqual([
+      "https://www.enjoytokyo.jp/event/2060940/",
+      "https://www.enjoytokyo.jp/event/1500577/"
+    ]);
+  });
 });

@@ -41,9 +41,12 @@ export interface NotionDatabaseSource extends BaseSource {
   notionTokenEnvName: string;
 }
 
-export type SelectorStrategyName = "revuestarlight_news_list" | "walkerplus_event_list";
+export type SelectorStrategyName =
+  | "revuestarlight_news_list"
+  | "walkerplus_event_list"
+  | "enjoytokyo_event_list";
 
-export type PaginationStrategyName = "walkerplus_event_list_pages";
+export type PaginationStrategyName = "walkerplus_event_list_pages" | "enjoytokyo_event_list_pages";
 
 export interface HtmlPaginationConfig {
   strategy: PaginationStrategyName;

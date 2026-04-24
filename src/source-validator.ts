@@ -19,9 +19,13 @@ const SOURCE_TYPES: readonly SourceType[] = [
 ];
 const SELECTOR_STRATEGIES: readonly SelectorStrategyName[] = [
   "revuestarlight_news_list",
-  "walkerplus_event_list"
+  "walkerplus_event_list",
+  "enjoytokyo_event_list"
 ];
-const PAGINATION_STRATEGIES: readonly PaginationStrategyName[] = ["walkerplus_event_list_pages"];
+const PAGINATION_STRATEGIES: readonly PaginationStrategyName[] = [
+  "walkerplus_event_list_pages",
+  "enjoytokyo_event_list_pages"
+];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

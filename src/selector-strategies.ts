@@ -10,6 +10,23 @@ interface ScopedAnchorRule {
   titleSelector?: string;
 }
 
+interface JsonLdListItem {
+  item?: unknown;
+}
+
+interface JsonLdEvent {
+  "@type"?: unknown;
+  name?: unknown;
+  url?: unknown;
+  startDate?: unknown;
+  endDate?: unknown;
+}
+
+interface JsonLdItemList {
+  "@type"?: unknown;
+  itemListElement?: unknown;
+}
+
 function collectScopedAnchorItems(
   html: string,
   baseUrl: string,
@@ -53,6 +70,59 @@ function collectScopedAnchorItems(
   });
 
   return items;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function asArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : [value];
+}
+
+function isItemList(value: unknown): value is JsonLdItemList {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return asArray(value["@type"]).includes("ItemList");
+}
+
+function collectJsonLdItemLists(value: unknown): JsonLdItemList[] {
+  const lists: JsonLdItemList[] = [];
+
+  for (const entry of asArray(value)) {
+    if (isItemList(entry)) {
+      lists.push(entry);
+      continue;
+    }
+
+    if (isRecord(entry) && "@graph" in entry) {
+      lists.push(...collectJsonLdItemLists(entry["@graph"]));
+    }
+  }
+
+  return lists;
+}
+
+function parseJsonLdItemLists(html: string): JsonLdItemList[] {
+  const $ = cheerio.load(html);
+  const lists: JsonLdItemList[] = [];
+
+  $('script[type="application/ld+json"]').each((_, element) => {
+    const rawJson = $(element).text().trim();
+    if (!rawJson) {
+      return;
+    }
+
+    try {
+      lists.push(...collectJsonLdItemLists(JSON.parse(rawJson) as unknown));
+    } catch {
+      // 壊れた JSON-LD は他の script block の抽出を妨げない。
+    }
+  });
+
+  return lists;
 }
 
 function revuestarlightNewsList(html: string, baseUrl: string, maxItems: number): MonitorItem[] {
@@ -110,9 +180,56 @@ function walkerplusEventList(html: string, baseUrl: string, maxItems: number): M
   });
 }
 
+function enjoytokyoEventList(html: string, baseUrl: string, maxItems: number): MonitorItem[] {
+  const seen = new Set<string>();
+  const items: MonitorItem[] = [];
+
+  for (const list of parseJsonLdItemLists(html)) {
+    for (const listItem of asArray(list.itemListElement) as JsonLdListItem[]) {
+      if (items.length >= maxItems) {
+        return items;
+      }
+      if (!isRecord(listItem) || !isRecord(listItem.item)) {
+        continue;
+      }
+
+      const event = listItem.item as JsonLdEvent;
+      if (event["@type"] !== "Event" || typeof event.name !== "string") {
+        continue;
+      }
+      if (typeof event.url !== "string") {
+        continue;
+      }
+
+      const absoluteUrl = toAbsoluteUrl(event.url, baseUrl);
+      if (!absoluteUrl || seen.has(absoluteUrl)) {
+        continue;
+      }
+
+      const titleParts = [event.name];
+      if (typeof event.startDate === "string") {
+        titleParts.push(event.startDate);
+      }
+      if (typeof event.endDate === "string" && event.endDate !== event.startDate) {
+        titleParts.push(`- ${event.endDate}`);
+      }
+
+      seen.add(absoluteUrl);
+      items.push({
+        id: absoluteUrl,
+        title: normalizeWhitespace(titleParts.join(" ")),
+        url: absoluteUrl
+      });
+    }
+  }
+
+  return items;
+}
+
 const STRATEGIES: Record<SelectorStrategyName, SelectorStrategy> = {
   revuestarlight_news_list: revuestarlightNewsList,
-  walkerplus_event_list: walkerplusEventList
+  walkerplus_event_list: walkerplusEventList,
+  enjoytokyo_event_list: enjoytokyoEventList
 };
 
 /**

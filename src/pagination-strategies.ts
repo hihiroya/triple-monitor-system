@@ -13,8 +13,20 @@ function walkerplusEventListPages(baseUrl: string, maxPages: number): string[] {
   return urls;
 }
 
+function enjoytokyoEventListPages(baseUrl: string, maxPages: number): string[] {
+  const normalizedBaseUrl = new URL(baseUrl).toString();
+  const urls = [normalizedBaseUrl];
+
+  for (let page = 2; page <= maxPages; page += 1) {
+    urls.push(new URL(`${page}/`, normalizedBaseUrl).toString());
+  }
+
+  return urls;
+}
+
 const STRATEGIES: Record<PaginationStrategyName, PaginationStrategy> = {
-  walkerplus_event_list_pages: walkerplusEventListPages
+  walkerplus_event_list_pages: walkerplusEventListPages,
+  enjoytokyo_event_list_pages: enjoytokyoEventListPages
 };
 
 export function buildPaginationUrls(
