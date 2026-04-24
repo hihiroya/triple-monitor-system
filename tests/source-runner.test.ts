@@ -9,6 +9,7 @@ import type {
   MonitorState,
   NotionDatabaseSource,
   NotionPageSource,
+  PublicHtmlListSource,
   RssSource
 } from "../src/types.js";
 
@@ -56,6 +57,16 @@ const notionDatabaseSource: NotionDatabaseSource = {
   notionTokenEnvName: "NOTION_TOKEN_MAIN",
   webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
   enabled: true
+};
+
+const publicHtmlSource: PublicHtmlListSource = {
+  key: "public-html",
+  type: "public_html_list_poll",
+  label: "Public HTML",
+  url: "https://example.com/list/",
+  webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+  enabled: true,
+  selectorStrategy: "revuestarlight_news_list"
 };
 
 function item(id: string): MonitorItem {
@@ -305,6 +316,45 @@ describe("runSource", () => {
       ok: false,
       changed: false,
       message: "HTTPエラー: 500 Internal Server Error url=https://example.com/feed.xml"
+    });
+  });
+
+  it("公開HTML一覧の timeout は一時的な取得失敗としてスキップする", async () => {
+    vi.mocked(fetchPublicHtmlSnapshot).mockRejectedValue(
+      new Error("HTTPリクエストがタイムアウトしました: https://example.com/list/")
+    );
+    const state: MonitorState = {
+      sources: {
+        "public-html": {
+          lastSeenItemId: "old",
+          seenItemIds: ["old"]
+        }
+      }
+    };
+
+    const result = await runSource(publicHtmlSource, state);
+
+    expect(result).toMatchObject({ ok: true, changed: false });
+    expect(result.message).toContain("公開HTML一覧の一時的な取得失敗");
+    expect(state.sources["public-html"]).toEqual({
+      lastSeenItemId: "old",
+      seenItemIds: ["old"]
+    });
+    expect(notifyDiscord).not.toHaveBeenCalled();
+  });
+
+  it("公開HTML一覧の抽出失敗はスキップしない", async () => {
+    vi.mocked(fetchPublicHtmlSnapshot).mockRejectedValue(
+      new Error("HTML一覧から記事リンクを抽出できませんでした")
+    );
+    const state: MonitorState = { sources: {} };
+
+    const result = await runSource(publicHtmlSource, state);
+
+    expect(result).toMatchObject({
+      ok: false,
+      changed: false,
+      message: "HTML一覧から記事リンクを抽出できませんでした"
     });
   });
 

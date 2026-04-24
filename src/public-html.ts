@@ -4,6 +4,12 @@ import { buildPaginationUrls } from "./pagination-strategies.js";
 import { runSelectorStrategy } from "./selector-strategies.js";
 import { asErrorMessage, clampMaxItems, fetchText } from "./utils.js";
 
+function formatAdditionalPageError(error: unknown): string {
+  const message = asErrorMessage(error);
+  const [summary] = message.split(" body=", 1);
+  return summary ?? message;
+}
+
 /**
  * 公開 HTML の一覧ページから list snapshot を取得する。
  *
@@ -34,7 +40,7 @@ export async function fetchPublicHtmlSnapshot(source: PublicHtmlListSource): Pro
       }
 
       logger.warn(
-        `HTML一覧の追加ページ取得をスキップしました: key=${source.key} url=${pageUrl} reason=${asErrorMessage(
+        `HTML一覧の追加ページ取得をスキップしました: key=${source.key} url=${pageUrl} reason=${formatAdditionalPageError(
           error
         )}`
       );

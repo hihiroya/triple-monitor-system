@@ -42,7 +42,15 @@ function isTransientFetchError(message: string): boolean {
 }
 
 function shouldSkipTransientSourceFailure(source: MonitorSource, error: unknown): boolean {
-  return isYoutubeRssSource(source) && isTransientFetchError(asErrorMessage(error));
+  return (
+    (isYoutubeRssSource(source) || source.type === "public_html_list_poll") &&
+    isTransientFetchError(asErrorMessage(error))
+  );
+}
+
+function formatTransientSkipMessage(source: MonitorSource, error: unknown): string {
+  const target = source.type === "public_html_list_poll" ? "公開HTML一覧の" : "YouTube RSS の";
+  return `${target}一時的な取得失敗のため今回の確認をスキップしました: ${asErrorMessage(error)}`;
 }
 
 /**
@@ -198,9 +206,7 @@ export async function runSource(
         key: source.key,
         ok: true,
         changed: false,
-        message: `YouTube RSS の一時的な取得失敗のため今回の確認をスキップしました: ${asErrorMessage(
-          error
-        )}`
+        message: formatTransientSkipMessage(source, error)
       };
     }
 
