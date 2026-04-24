@@ -94,4 +94,68 @@ describe("fetchPublicHtmlSnapshot", () => {
       "https://www.enjoytokyo.jp/event/2050000/"
     ]);
   });
+
+  it("追加ページの取得失敗は既に取得済みの item があれば部分取得で続行する", async () => {
+    const page1 = await readFile("tests/fixtures/walkerplus-event-list.html", "utf8");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string | URL) => {
+        const url = String(input);
+        if (url.endsWith("/event_list/ar0300/eg0107/")) {
+          return Promise.resolve(new Response(page1, { status: 200 }));
+        }
+        if (url.endsWith("/event_list/ar0300/eg0107/2.html")) {
+          return Promise.reject(new Error("network timeout"));
+        }
+        return Promise.reject(new Error(`unexpected url ${url}`));
+      })
+    );
+
+    const source: PublicHtmlListSource = {
+      key: "walkerplus-art-events",
+      type: "public_html_list_poll",
+      label: "Walkerplus",
+      url: "https://www.walkerplus.com/event_list/ar0300/eg0107/",
+      webhookEnvName: "DISCORD_WEBHOOK_URL_TOURISM",
+      enabled: true,
+      selectorStrategy: "walkerplus_event_list",
+      maxItems: 50,
+      pagination: {
+        strategy: "walkerplus_event_list_pages",
+        maxPages: 2
+      }
+    };
+
+    const snapshot = await fetchPublicHtmlSnapshot(source);
+
+    expect(snapshot.items.map((item) => item.id)).toEqual([
+      "https://www.walkerplus.com/event/ar0313e583830/",
+      "https://www.walkerplus.com/event/ar0313e558982/",
+      "https://www.walkerplus.com/event/ar0313e583109/"
+    ]);
+  });
+
+  it("1ページ目の取得失敗は source 失敗として扱う", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.reject(new Error("network timeout")))
+    );
+
+    const source: PublicHtmlListSource = {
+      key: "walkerplus-art-events",
+      type: "public_html_list_poll",
+      label: "Walkerplus",
+      url: "https://www.walkerplus.com/event_list/ar0300/eg0107/",
+      webhookEnvName: "DISCORD_WEBHOOK_URL_TOURISM",
+      enabled: true,
+      selectorStrategy: "walkerplus_event_list",
+      maxItems: 50,
+      pagination: {
+        strategy: "walkerplus_event_list_pages",
+        maxPages: 2
+      }
+    };
+
+    await expect(fetchPublicHtmlSnapshot(source)).rejects.toThrow("network timeout");
+  });
 });

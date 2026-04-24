@@ -2,7 +2,7 @@ name: Tourism Monitor
 
 on:
   schedule:
-    - cron: "17 * * * *"
+    - cron: "10 6 * * *" # 毎日6:10に実行
   workflow_dispatch:
 
 permissions:

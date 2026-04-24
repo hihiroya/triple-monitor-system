@@ -2,7 +2,7 @@ name: X Profile Monitor
 
 on:
   schedule:
-    - cron: "5,35 * * * *"
+    - cron: "5,35 * * * *" # 毎時5分と35分に実行
   workflow_dispatch:
 
 permissions:

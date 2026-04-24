@@ -1,7 +1,8 @@
 import type { ListSnapshot, PublicHtmlListSource } from "./types.js";
+import { logger } from "./logger.js";
 import { buildPaginationUrls } from "./pagination-strategies.js";
 import { runSelectorStrategy } from "./selector-strategies.js";
-import { clampMaxItems, fetchText } from "./utils.js";
+import { asErrorMessage, clampMaxItems, fetchText } from "./utils.js";
 
 /**
  * 公開 HTML の一覧ページから list snapshot を取得する。
@@ -15,16 +16,30 @@ export async function fetchPublicHtmlSnapshot(source: PublicHtmlListSource): Pro
   const items: ListSnapshot["items"] = [];
   const seen = new Set<string>();
 
-  for (const pageUrl of pageUrls) {
+  for (const [pageIndex, pageUrl] of pageUrls.entries()) {
     if (items.length >= maxItems) {
       break;
     }
 
-    const html = await fetchText(pageUrl, {
-      headers: {
-        "User-Agent": "triple-monitor-system/1.0 public HTML monitor"
+    let html: string;
+    try {
+      html = await fetchText(pageUrl, {
+        headers: {
+          "User-Agent": "triple-monitor-system/1.0 public HTML monitor"
+        }
+      });
+    } catch (error) {
+      if (pageIndex === 0 || items.length === 0) {
+        throw error;
       }
-    });
+
+      logger.warn(
+        `HTML一覧の追加ページ取得をスキップしました: key=${source.key} url=${pageUrl} reason=${asErrorMessage(
+          error
+        )}`
+      );
+      break;
+    }
 
     const pageItems = runSelectorStrategy(
       source.selectorStrategy,

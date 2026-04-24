@@ -2,7 +2,7 @@ name: Public Site Monitor
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "25 * * * *" # 毎時25分に実行
   workflow_dispatch:
 
 permissions:

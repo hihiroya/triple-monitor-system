@@ -220,6 +220,70 @@ describe("runSource", () => {
     });
   });
 
+  it("YouTube RSS の 5xx は一時的な取得失敗としてスキップする", async () => {
+    vi.mocked(fetchRssSnapshot).mockRejectedValue(
+      new Error(
+        "HTTPエラー: 500 Internal Server Error url=https://www.youtube.com/feeds/videos.xml?channel_id=channel"
+      )
+    );
+    const state: MonitorState = {
+      sources: {
+        "youtube-rss": {
+          lastSeenItemId: "old",
+          seenItemIds: ["old"]
+        }
+      }
+    };
+    const youtubeSource: RssSource = {
+      ...rssSource,
+      key: "youtube-rss",
+      rssUrl: "https://www.youtube.com/feeds/videos.xml?channel_id=channel"
+    };
+
+    const result = await runSource(youtubeSource, state);
+
+    expect(result).toMatchObject({ ok: true, changed: false });
+    expect(result.message).toContain("YouTube RSS の一時的な取得失敗");
+    expect(state.sources["youtube-rss"]).toEqual({
+      lastSeenItemId: "old",
+      seenItemIds: ["old"]
+    });
+    expect(notifyDiscord).not.toHaveBeenCalled();
+  });
+
+  it("YouTube RSS でも XML 解析失敗はスキップしない", async () => {
+    vi.mocked(fetchRssSnapshot).mockRejectedValue(new Error("RSS XMLの解析に失敗しました"));
+    const state: MonitorState = { sources: {} };
+    const youtubeSource: RssSource = {
+      ...rssSource,
+      key: "youtube-rss",
+      rssUrl: "https://www.youtube.com/feeds/videos.xml?channel_id=channel"
+    };
+
+    const result = await runSource(youtubeSource, state);
+
+    expect(result).toMatchObject({
+      ok: false,
+      changed: false,
+      message: "RSS XMLの解析に失敗しました"
+    });
+  });
+
+  it("YouTube 以外の RSS の 5xx は失敗として扱う", async () => {
+    vi.mocked(fetchRssSnapshot).mockRejectedValue(
+      new Error("HTTPエラー: 500 Internal Server Error url=https://example.com/feed.xml")
+    );
+    const state: MonitorState = { sources: {} };
+
+    const result = await runSource(rssSource, state);
+
+    expect(result).toMatchObject({
+      ok: false,
+      changed: false,
+      message: "HTTPエラー: 500 Internal Server Error url=https://example.com/feed.xml"
+    });
+  });
+
   it("version source の初回実行では通知せず version baseline を保存する", async () => {
     vi.mocked(fetchNotionPageSnapshot).mockResolvedValue({
       kind: "version",

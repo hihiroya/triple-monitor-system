@@ -2,7 +2,7 @@ name: RSS Monitor
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "*/30 * * * *" # 毎時0分と30分に実行
   workflow_dispatch:
 
 permissions:

@@ -15,6 +15,36 @@ import { asErrorMessage } from "./utils.js";
 
 const SEEN_ITEM_HISTORY_LIMIT = 50;
 
+function isYoutubeRssSource(source: MonitorSource): boolean {
+  if (source.type !== "rss") {
+    return false;
+  }
+
+  const url = new URL(source.rssUrl);
+  return (
+    (url.hostname === "www.youtube.com" || url.hostname === "youtube.com") &&
+    url.pathname === "/feeds/videos.xml"
+  );
+}
+
+function isTransientFetchError(message: string): boolean {
+  if (message.includes("HTTPリクエストがタイムアウトしました")) {
+    return true;
+  }
+
+  const statusMatch = /HTTPエラー: (?<status>\d{3})/.exec(message);
+  if (!statusMatch?.groups?.status) {
+    return false;
+  }
+
+  const status = Number(statusMatch.groups.status);
+  return status >= 500 && status <= 599;
+}
+
+function shouldSkipTransientSourceFailure(source: MonitorSource, error: unknown): boolean {
+  return isYoutubeRssSource(source) && isTransientFetchError(asErrorMessage(error));
+}
+
 /**
  * source type に応じて現在の監視結果を取得する。
  *
@@ -153,6 +183,17 @@ export async function runSource(
 
     return await runVersionSource(source, state, snapshot, sourceState.lastSeenVersion);
   } catch (error) {
+    if (shouldSkipTransientSourceFailure(source, error)) {
+      return {
+        key: source.key,
+        ok: true,
+        changed: false,
+        message: `YouTube RSS の一時的な取得失敗のため今回の確認をスキップしました: ${asErrorMessage(
+          error
+        )}`
+      };
+    }
+
     return {
       key: source.key,
       ok: false,

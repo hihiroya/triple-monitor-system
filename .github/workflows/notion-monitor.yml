@@ -2,7 +2,7 @@ name: Notion Monitor
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "20 * * * *" # 毎時20分に実行
   workflow_dispatch:
 
 permissions:
