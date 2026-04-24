@@ -13,5 +13,20 @@
       "strategy": "walkerplus_event_list_pages",
       "maxPages": 5
     }
+  },
+  {
+    "key": "enjoytokyo-tokyo-art-events",
+    "type": "public_html_list_poll",
+    "label": "レッツエンジョイ東京 展示・展覧会",
+    "url": "https://www.enjoytokyo.jp/event/list/cat04/",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_TOURISM",
+    "enabled": true,
+    "group": "tourism-events",
+    "maxItems": 75,
+    "selectorStrategy": "enjoytokyo_event_list",
+    "pagination": {
+      "strategy": "enjoytokyo_event_list_pages",
+      "maxPages": 5
+    }
   }
 ]
