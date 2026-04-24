@@ -446,12 +446,58 @@ function scienceportalEventList(html: string, baseUrl: string, maxItems: number)
   return items;
 }
 
+function nmriMailNewsList(html: string, baseUrl: string, maxItems: number): MonitorItem[] {
+  const $ = cheerio.load(html);
+  const items: MonitorItem[] = [];
+  const seen = new Set<string>();
+
+  $("ul.backnumber a[href]").each((_, element) => {
+    if (items.length >= maxItems) {
+      return false;
+    }
+
+    const link = $(element);
+    const href = link.attr("href");
+    if (!href) {
+      return;
+    }
+
+    const absoluteUrl = toAbsoluteUrl(href, baseUrl);
+    if (!absoluteUrl || seen.has(absoluteUrl)) {
+      return;
+    }
+
+    const url = new URL(absoluteUrl);
+    if (
+      url.origin !== "https://www.nmri.go.jp" ||
+      !/^\/news\/mail_news\/(?:\d{4}\/)?mail_?news[\w-]*\.html$/.test(url.pathname)
+    ) {
+      return;
+    }
+
+    const title = normalizeWhitespace(link.text());
+    if (!title) {
+      return;
+    }
+
+    seen.add(absoluteUrl);
+    items.push({
+      id: absoluteUrl,
+      title,
+      url: absoluteUrl
+    });
+  });
+
+  return items;
+}
+
 const STRATEGIES: Record<SelectorStrategyName, SelectorStrategy> = {
   revuestarlight_news_list: revuestarlightNewsList,
   walkerplus_event_list: walkerplusEventList,
   enjoytokyo_event_list: enjoytokyoEventList,
   artscape_exhibition_list: artscapeExhibitionList,
-  scienceportal_event_list: scienceportalEventList
+  scienceportal_event_list: scienceportalEventList,
+  nmri_mail_news_list: nmriMailNewsList
 };
 
 /**

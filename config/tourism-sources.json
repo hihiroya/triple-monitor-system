@@ -54,5 +54,16 @@
     "group": "tourism-events",
     "maxItems": 75,
     "selectorStrategy": "scienceportal_event_list"
+  },
+  {
+    "key": "nmri-mail-news",
+    "type": "public_html_list_poll",
+    "label": "海上技術安全研究所 メールニュース",
+    "url": "https://www.nmri.go.jp/news/mail_news/",
+    "webhookEnvName": "DISCORD_WEBHOOK_URL_TOURISM",
+    "enabled": true,
+    "group": "tourism-events",
+    "maxItems": 50,
+    "selectorStrategy": "nmri_mail_news_list"
   }
 ]

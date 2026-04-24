@@ -278,4 +278,70 @@ describe("runSelectorStrategy", () => {
       "https://scienceportal.jst.go.jp/events/19446/"
     ]);
   });
+
+  it("nmri_mail_news_list はバックナンバー一覧だけからメールニュースを抽出する", async () => {
+    const html = await readFile(
+      path.resolve("tests", "fixtures", "nmri-mail-news-list.html"),
+      "utf8"
+    );
+
+    const items = runSelectorStrategy(
+      "nmri_mail_news_list",
+      html,
+      "https://www.nmri.go.jp/news/mail_news/",
+      10
+    );
+
+    expect(items).toEqual([
+      {
+        id: "https://www.nmri.go.jp/news/mail_news/2026/mail_news232.html",
+        title: "令和8年4月3日 No.232",
+        url: "https://www.nmri.go.jp/news/mail_news/2026/mail_news232.html"
+      },
+      {
+        id: "https://www.nmri.go.jp/news/mail_news/2026/mail_news231.html",
+        title: "令和8年3月18日 No.231",
+        url: "https://www.nmri.go.jp/news/mail_news/2026/mail_news231.html"
+      },
+      {
+        id: "https://www.nmri.go.jp/news/mail_news/2026/mail_news230.html",
+        title: "令和8年1月16日 No.230",
+        url: "https://www.nmri.go.jp/news/mail_news/2026/mail_news230.html"
+      },
+      {
+        id: "https://www.nmri.go.jp/news/mail_news/2025/mail_news229.html",
+        title: "令和7年12月24日 No.229",
+        url: "https://www.nmri.go.jp/news/mail_news/2025/mail_news229.html"
+      },
+      {
+        id: "https://www.nmri.go.jp/news/mail_news/2024/mail_news_20240926.html",
+        title: "令和6年09月26日 号外",
+        url: "https://www.nmri.go.jp/news/mail_news/2024/mail_news_20240926.html"
+      },
+      {
+        id: "https://www.nmri.go.jp/news/mail_news/mailnews139.html",
+        title: "平成27年07月15日 No.139",
+        url: "https://www.nmri.go.jp/news/mail_news/mailnews139.html"
+      }
+    ]);
+  });
+
+  it("nmri_mail_news_list は maxItems を超えて抽出しない", async () => {
+    const html = await readFile(
+      path.resolve("tests", "fixtures", "nmri-mail-news-list.html"),
+      "utf8"
+    );
+
+    const items = runSelectorStrategy(
+      "nmri_mail_news_list",
+      html,
+      "https://www.nmri.go.jp/news/mail_news/",
+      2
+    );
+
+    expect(items.map((item) => item.id)).toEqual([
+      "https://www.nmri.go.jp/news/mail_news/2026/mail_news232.html",
+      "https://www.nmri.go.jp/news/mail_news/2026/mail_news231.html"
+    ]);
+  });
 });

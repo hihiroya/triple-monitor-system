@@ -171,6 +171,38 @@ describe("fetchPublicHtmlSnapshot", () => {
     ]);
   });
 
+  it("NMRI メールニュースのバックナンバーから list snapshot を作る", async () => {
+    const html = await readFile("tests/fixtures/nmri-mail-news-list.html", "utf8");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn((input: string | URL) => {
+        const url = String(input);
+        if (url === "https://www.nmri.go.jp/news/mail_news/") {
+          return Promise.resolve(new Response(html, { status: 200 }));
+        }
+        return Promise.reject(new Error(`unexpected url ${url}`));
+      })
+    );
+
+    const source: PublicHtmlListSource = {
+      key: "nmri-mail-news",
+      type: "public_html_list_poll",
+      label: "海上技術安全研究所 メールニュース",
+      url: "https://www.nmri.go.jp/news/mail_news/",
+      webhookEnvName: "DISCORD_WEBHOOK_URL_TOURISM",
+      enabled: true,
+      selectorStrategy: "nmri_mail_news_list",
+      maxItems: 2
+    };
+
+    const snapshot = await fetchPublicHtmlSnapshot(source);
+
+    expect(snapshot.items.map((item) => item.id)).toEqual([
+      "https://www.nmri.go.jp/news/mail_news/2026/mail_news232.html",
+      "https://www.nmri.go.jp/news/mail_news/2026/mail_news231.html"
+    ]);
+  });
+
   it("追加ページの取得失敗は既に取得済みの item があれば部分取得で続行する", async () => {
     const page1 = await readFile("tests/fixtures/walkerplus-event-list.html", "utf8");
     vi.stubGlobal(

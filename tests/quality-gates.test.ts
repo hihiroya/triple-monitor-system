@@ -298,4 +298,38 @@ describe("quality gate helpers", () => {
     expect(snapshot.items).toHaveLength(2);
     expect(snapshot.items[0]?.url).toMatch(/^https:\/\/scienceportal\.jst\.go\.jp\/events\/\d+\/$/);
   });
+
+  it("fetchPublicHtmlSnapshot は NMRI fixture からメールニュース item を作る", async () => {
+    const html = await readFile("tests/fixtures/nmri-mail-news-list.html", "utf8");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() =>
+        Promise.resolve(
+          new Response(html, {
+            status: 200,
+            headers: { "Content-Type": "text/html" }
+          })
+        )
+      )
+    );
+
+    const source: PublicHtmlListSource = {
+      key: "nmri-mail-news",
+      type: "public_html_list_poll",
+      label: "海上技術安全研究所 メールニュース",
+      url: "https://www.nmri.go.jp/news/mail_news/",
+      webhookEnvName: "DISCORD_WEBHOOK_URL_TOURISM",
+      enabled: true,
+      maxItems: 2,
+      selectorStrategy: "nmri_mail_news_list"
+    };
+
+    const snapshot = await fetchPublicHtmlSnapshot(source);
+
+    expect(snapshot.kind).toBe("list");
+    expect(snapshot.items).toHaveLength(2);
+    expect(snapshot.items[0]?.url).toMatch(
+      /^https:\/\/www\.nmri\.go\.jp\/news\/mail_news\/(?:\d{4}\/)?mail_?news/
+    );
+  });
 });

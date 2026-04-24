@@ -22,7 +22,8 @@ const SELECTOR_STRATEGIES: readonly SelectorStrategyName[] = [
   "walkerplus_event_list",
   "enjoytokyo_event_list",
   "artscape_exhibition_list",
-  "scienceportal_event_list"
+  "scienceportal_event_list",
+  "nmri_mail_news_list"
 ];
 const PAGINATION_STRATEGIES: readonly PaginationStrategyName[] = [
   "walkerplus_event_list_pages",

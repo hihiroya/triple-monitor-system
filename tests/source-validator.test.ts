@@ -177,6 +177,27 @@ describe("validateSources", () => {
     });
   });
 
+  it("NMRI メールニュース用 selectorStrategy も受け付ける", () => {
+    const [source] = validateSources([
+      {
+        key: "nmri-mail-news",
+        type: "public_html_list_poll",
+        label: "NMRI",
+        url: "https://www.nmri.go.jp/news/mail_news/",
+        webhookEnvName: "DISCORD_WEBHOOK_URL_TOURISM",
+        enabled: true,
+        selectorStrategy: "nmri_mail_news_list",
+        maxItems: 50
+      }
+    ]);
+
+    expect(source).toMatchObject({
+      key: "nmri-mail-news",
+      type: "public_html_list_poll",
+      selectorStrategy: "nmri_mail_news_list"
+    });
+  });
+
   it("未許可の pagination strategy を拒否する", () => {
     expect(() =>
       validateSources([
