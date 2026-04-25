@@ -107,6 +107,24 @@ describe("quality gate helpers", () => {
     }
   });
 
+  it("workflow の npm install は lifecycle script を実行しない", async () => {
+    const workflowPaths = [
+      ".github/workflows/quality-check.yml",
+      ".github/workflows/rss-monitor.yml",
+      ".github/workflows/x-profile-monitor.yml",
+      ".github/workflows/notion-monitor.yml",
+      ".github/workflows/public-site-monitor.yml",
+      ".github/workflows/x-twitter-monitor.yml",
+      ".github/workflows/tourism-monitor.yml"
+    ];
+
+    for (const workflowPath of workflowPaths) {
+      const workflow = await readFile(workflowPath, "utf8");
+      expect(workflow, workflowPath).not.toMatch(/run:\s*npm ci\s*$/m);
+      expect(workflow, workflowPath).toContain("run: npm ci --ignore-scripts");
+    }
+  });
+
   it("x-profile-monitor.yml は X profile 監視を定期実行する", async () => {
     const workflow = await readFile(".github/workflows/x-profile-monitor.yml", "utf8");
     const checkSecretsIndex = workflow.indexOf("- name: Check X profile monitor secrets");

@@ -84,8 +84,10 @@ RSSHub では取得しづらい X profile の親ポストや RT は、`x-profile
 
 ```bash
 node --version
-npm ci
+npm ci --ignore-scripts
 ```
+
+このリポジトリは npm supply-chain 攻撃で悪用されやすい install lifecycle script を通常実行しない方針です。`.npmrc` でも `ignore-scripts=true` を設定し、GitHub Actions でも `npm ci --ignore-scripts` を使います。依存追加時に install script が本当に必要な package を入れる場合は、package と script 内容を確認してから個別に許可してください。
 
 2. 監視セットごとの sources ファイルを編集し、使う source の `enabled` を `true` にします。既定セットは `config/default-sources.json`、追加セットは `config/tourism-sources.json` を使います。
 
@@ -299,7 +301,7 @@ npm run lint:fix
 
 `validate:config` は build 済みの `dist/validate-config.js` を実行し、実際の sources と state を検証します。既定ではリポジトリ内の監視セットを検証し、必要に応じて `MONITOR_SOURCES_PATH` と `MONITOR_STATE_PATH` で個別セットや複数 sources を指定できます。設定ファイルの typo や壊れた state は監視実行時ではなく pull request 時点で検出します。
 
-`quality-check.yml` は監視 workflow とは分けています。監視の失敗とコード品質の失敗を別々に追跡でき、開発中の pull request と default branch への push では secret scan、`npm ci`、`typecheck`、`build`、`validate:config`、`lint`、`knip`、`audit`、`test:coverage`、`format:check`、`actionlint` をまとめて確認します。`actionlint` は workflow の YAML 構文、`schedule`、`concurrency` などの記述ミスを早期に検出するために使います。`quality-gates.test.ts` では RSSHub image の digest 固定、`TWITTER_AUTH_TOKEN` の渡し先、通常 RSS と X/Twitter RSS の group 分割も検査します。
+`quality-check.yml` は監視 workflow とは分けています。監視の失敗とコード品質の失敗を別々に追跡でき、開発中の pull request と default branch への push では secret scan、`npm ci --ignore-scripts`、`typecheck`、`build`、`validate:config`、`lint`、`knip`、`audit`、`test:coverage`、`format:check`、`actionlint` をまとめて確認します。`actionlint` は workflow の YAML 構文、`schedule`、`concurrency` などの記述ミスを早期に検出するために使います。`quality-gates.test.ts` では RSSHub image の digest 固定、`TWITTER_AUTH_TOKEN` の渡し先、通常 RSS と X/Twitter RSS の group 分割、npm install 時の lifecycle script 無効化も検査します。
 
 secret scan は Gitleaks を使い、Discord webhook URL、Notion token、その他 API token の誤コミットを検出します。検出時は CI を失敗させます。PR コメント権限を増やさないため `GITLEAKS_ENABLE_COMMENTS=false` にしています。Organization 配下のリポジトリで `gitleaks/gitleaks-action` を使う場合は、必要に応じて `GITLEAKS_LICENSE` を GitHub Secrets に登録してください。
 
