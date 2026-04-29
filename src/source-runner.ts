@@ -127,6 +127,38 @@ function filterAlreadySeenItemIds(itemIds: string[], previousSeenItemIds: string
   return itemIds.filter((itemId) => seen.has(itemId));
 }
 
+function extractXStatusId(itemId: string): bigint | undefined {
+  const match = /(?:^|\/status\/)(\d{1,25})(?:$|[/?#])/.exec(itemId);
+  if (!match?.[1]) {
+    return undefined;
+  }
+  return BigInt(match[1]);
+}
+
+function isDefined<T>(value: T | undefined): value is T {
+  return value !== undefined;
+}
+
+function maxBigInt(values: bigint[]): bigint | undefined {
+  let result: bigint | undefined;
+  for (const value of values) {
+    if (result === undefined || value > result) {
+      result = value;
+    }
+  }
+  return result;
+}
+
+function minBigInt(values: bigint[]): bigint | undefined {
+  let result: bigint | undefined;
+  for (const value of values) {
+    if (result === undefined || value < result) {
+      result = value;
+    }
+  }
+  return result;
+}
+
 function formatLogItemId(itemId: string | undefined): string {
   if (!itemId) {
     return "(none)";
@@ -173,6 +205,43 @@ function findNewItems(items: MonitorItem[], seenItemIds: string[]): MonitorItem[
     .slice(0, lastSeenIndex + 1)
     .filter((item) => !seen.has(item.id))
     .reverse();
+}
+
+/**
+ * X profile timeline は X 側の返却件数が急に浅くなることがある。
+ *
+ * 既読との交差がなくても、取得できた全 status ID が既読履歴より新しい場合は、
+ * 重複通知ではなく取得窓落ち後の未通知 item と判断して復旧できる。
+ */
+function findNewXProfileItemsAfterGap(
+  items: MonitorItem[],
+  seenItemIds: string[]
+): MonitorItem[] | undefined {
+  const parsedItemStatusIds = items.map((item) => extractXStatusId(item.id));
+  const seenStatusIds = seenItemIds.map(extractXStatusId).filter(isDefined);
+  if (parsedItemStatusIds.some((id) => id === undefined) || seenStatusIds.length === 0) {
+    return undefined;
+  }
+  const itemStatusIds = parsedItemStatusIds.filter(isDefined);
+
+  const oldestItemStatusId = minBigInt(itemStatusIds);
+  const newestSeenStatusId = maxBigInt(seenStatusIds);
+  if (
+    oldestItemStatusId === undefined ||
+    newestSeenStatusId === undefined ||
+    oldestItemStatusId <= newestSeenStatusId
+  ) {
+    return undefined;
+  }
+
+  return [...items].sort((a, b) => {
+    const statusA = extractXStatusId(a.id);
+    const statusB = extractXStatusId(b.id);
+    if (statusA === undefined || statusB === undefined) {
+      return 0;
+    }
+    return statusA < statusB ? -1 : statusA > statusB ? 1 : 0;
+  });
 }
 
 /**
@@ -263,7 +332,26 @@ async function runListSource(
     };
   }
 
-  const newItems = findNewItems(items, previousSeenItemIds);
+  let recoveredXProfileGap = false;
+  let newItems: MonitorItem[];
+  try {
+    newItems = findNewItems(items, previousSeenItemIds);
+  } catch (error) {
+    const recoveredItems =
+      source.type === "x_profile_poll"
+        ? findNewXProfileItemsAfterGap(items, previousSeenItemIds)
+        : undefined;
+    if (!recoveredItems) {
+      throw error;
+    }
+    recoveredXProfileGap = true;
+    newItems = recoveredItems;
+    logger.warn(
+      `x profile gap recovery: key=${source.key} newItems=${newItems.length} newestSeen=${formatLogItemId(
+        previousSeenItemIds[0]
+      )} oldestFetched=${formatLogItemId(newItems[0]?.id)}`
+    );
+  }
   logger.info(
     `list diff: key=${source.key} newItems=${newItems.length} firstNew=${formatLogItemId(
       newItems[0]?.id
@@ -303,7 +391,9 @@ async function runListSource(
     key: source.key,
     ok: true,
     changed: true,
-    message: `${newItems.length} 件通知しました`
+    message: recoveredXProfileGap
+      ? `${newItems.length} 件通知しました（X profile の取得窓落ちから復旧）`
+      : `${newItems.length} 件通知しました`
   };
 }
 

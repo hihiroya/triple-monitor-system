@@ -4,13 +4,15 @@ import { fetchNotionDatabaseSnapshot, fetchNotionPageSnapshot } from "../src/not
 import { fetchPublicHtmlSnapshot } from "../src/public-html.js";
 import { fetchRssSnapshot } from "../src/rss.js";
 import { runSource } from "../src/source-runner.js";
+import { fetchXProfileSnapshot } from "../src/x-profile.js";
 import type {
   MonitorItem,
   MonitorState,
   NotionDatabaseSource,
   NotionPageSource,
   PublicHtmlListSource,
-  RssSource
+  RssSource,
+  XProfileSource
 } from "../src/types.js";
 
 vi.mock("../src/discord.js", () => ({
@@ -28,6 +30,10 @@ vi.mock("../src/notion.js", () => ({
 
 vi.mock("../src/public-html.js", () => ({
   fetchPublicHtmlSnapshot: vi.fn()
+}));
+
+vi.mock("../src/x-profile.js", () => ({
+  fetchXProfileSnapshot: vi.fn()
 }));
 
 const rssSource: RssSource = {
@@ -69,6 +75,16 @@ const publicHtmlSource: PublicHtmlListSource = {
   selectorStrategy: "revuestarlight_news_list"
 };
 
+const xProfileSource: XProfileSource = {
+  key: "x-profile",
+  type: "x_profile_poll",
+  label: "X Profile",
+  screenName: "example",
+  xAuthTokenEnvName: "TWITTER_AUTH_TOKEN",
+  webhookEnvName: "DISCORD_WEBHOOK_URL_MAIN",
+  enabled: true
+};
+
 function item(id: string): MonitorItem {
   return {
     id,
@@ -84,6 +100,7 @@ describe("runSource", () => {
     vi.mocked(fetchNotionDatabaseSnapshot).mockReset();
     vi.mocked(fetchNotionPageSnapshot).mockReset();
     vi.mocked(fetchPublicHtmlSnapshot).mockReset();
+    vi.mocked(fetchXProfileSnapshot).mockReset();
   });
 
   it("list source の初回実行では通知せず baseline と seenItemIds を保存する", async () => {
@@ -252,6 +269,76 @@ describe("runSource", () => {
     expect(state.sources["rss-main"]).toEqual({
       lastSeenItemId: "missing",
       seenItemIds: ["missing"]
+    });
+  });
+
+  it("X profile は取得窓落ちでも全 item が既読より新しい場合は通知して復旧する", async () => {
+    vi.mocked(fetchXProfileSnapshot).mockResolvedValue({
+      kind: "list",
+      items: [
+        item("https://x.com/example/status/2049513860558909459"),
+        item("https://x.com/example/status/2049513278280540621")
+      ]
+    });
+    vi.mocked(notifyDiscord).mockResolvedValue(undefined);
+    const state: MonitorState = {
+      sources: {
+        "x-profile": {
+          lastSeenItemId: "https://x.com/example/status/2047873480331538911",
+          seenItemIds: ["https://x.com/example/status/2047873480331538911"]
+        }
+      }
+    };
+
+    const result = await runSource(xProfileSource, state);
+
+    expect(result).toMatchObject({
+      ok: true,
+      changed: true,
+      message: "2 件通知しました（X profile の取得窓落ちから復旧）"
+    });
+    expect(notifyDiscord).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(notifyDiscord).mock.calls[0]?.[1]).toMatchObject({
+      id: "https://x.com/example/status/2049513278280540621"
+    });
+    expect(vi.mocked(notifyDiscord).mock.calls[1]?.[1]).toMatchObject({
+      id: "https://x.com/example/status/2049513860558909459"
+    });
+    expect(state.sources["x-profile"]).toEqual({
+      lastSeenItemId: "https://x.com/example/status/2049513860558909459",
+      seenItemIds: [
+        "https://x.com/example/status/2049513860558909459",
+        "https://x.com/example/status/2049513278280540621",
+        "https://x.com/example/status/2047873480331538911"
+      ]
+    });
+  });
+
+  it("X profile でも取得 item が既読より古い可能性がある場合は復旧しない", async () => {
+    vi.mocked(fetchXProfileSnapshot).mockResolvedValue({
+      kind: "list",
+      items: [
+        item("https://x.com/example/status/2049513860558909459"),
+        item("https://x.com/example/status/2047000000000000000")
+      ]
+    });
+    const state: MonitorState = {
+      sources: {
+        "x-profile": {
+          lastSeenItemId: "https://x.com/example/status/2047873480331538911",
+          seenItemIds: ["https://x.com/example/status/2047873480331538911"]
+        }
+      }
+    };
+
+    const result = await runSource(xProfileSource, state);
+
+    expect(result.ok).toBe(false);
+    expect(result.message).toContain("既読 item が取得結果に見つかりません");
+    expect(notifyDiscord).not.toHaveBeenCalled();
+    expect(state.sources["x-profile"]).toEqual({
+      lastSeenItemId: "https://x.com/example/status/2047873480331538911",
+      seenItemIds: ["https://x.com/example/status/2047873480331538911"]
     });
   });
 
