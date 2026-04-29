@@ -68,8 +68,8 @@
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
     "enabled": true,
     "group": "x-profile",
-    "maxItems": 20,
-    "maxAgeHours": 72,
+    "maxItems": 100,
+    "maxAgeHours": 168,
     "includeRetweets": true
   },
   {
