@@ -41,10 +41,24 @@ function isTransientFetchError(message: string): boolean {
   return status >= 500 && status <= 599;
 }
 
+function isTransientYoutubeRssFetchError(message: string): boolean {
+  const statusMatch = /HTTPエラー: (?<status>\d{3})/.exec(message);
+  if (statusMatch?.groups?.status === "404") {
+    return true;
+  }
+
+  return isTransientFetchError(message);
+}
+
 function shouldSkipTransientSourceFailure(source: MonitorSource, error: unknown): boolean {
+  const message = asErrorMessage(error);
+  if (isYoutubeRssSource(source)) {
+    return isTransientYoutubeRssFetchError(message);
+  }
+
   return (
-    (isYoutubeRssSource(source) || source.type === "public_html_list_poll") &&
-    isTransientFetchError(asErrorMessage(error))
+    source.type === "public_html_list_poll" &&
+    isTransientFetchError(message)
   );
 }
 

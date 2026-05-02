@@ -373,6 +373,37 @@ describe("runSource", () => {
     expect(notifyDiscord).not.toHaveBeenCalled();
   });
 
+  it("YouTube RSS の 404 は一時的な取得失敗としてスキップする", async () => {
+    vi.mocked(fetchRssSnapshot).mockRejectedValue(
+      new Error(
+        "HTTPエラー: 404 Not Found url=https://www.youtube.com/feeds/videos.xml?channel_id=channel"
+      )
+    );
+    const state: MonitorState = {
+      sources: {
+        "youtube-rss": {
+          lastSeenItemId: "old",
+          seenItemIds: ["old"]
+        }
+      }
+    };
+    const youtubeSource: RssSource = {
+      ...rssSource,
+      key: "youtube-rss",
+      rssUrl: "https://www.youtube.com/feeds/videos.xml?channel_id=channel"
+    };
+
+    const result = await runSource(youtubeSource, state);
+
+    expect(result).toMatchObject({ ok: true, changed: false });
+    expect(result.message).toContain("YouTube RSS の一時的な取得失敗");
+    expect(state.sources["youtube-rss"]).toEqual({
+      lastSeenItemId: "old",
+      seenItemIds: ["old"]
+    });
+    expect(notifyDiscord).not.toHaveBeenCalled();
+  });
+
   it("YouTube RSS でも XML 解析失敗はスキップしない", async () => {
     vi.mocked(fetchRssSnapshot).mockRejectedValue(new Error("RSS XMLの解析に失敗しました"));
     const state: MonitorState = { sources: {} };
