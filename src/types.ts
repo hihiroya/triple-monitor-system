@@ -5,7 +5,7 @@ export type SourceType =
   | "notion_api_database_poll"
   | "public_html_list_poll";
 
-export interface BaseSource {
+interface BaseSource {
   key: string;
   type: SourceType;
   label: string;

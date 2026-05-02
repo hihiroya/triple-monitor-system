@@ -213,7 +213,7 @@ function parseSciencePortalEvents(html: string): SciencePortalEvent[] {
     if (!Array.isArray(parsed)) {
       return [];
     }
-    return parsed.filter(isRecord) as SciencePortalEvent[];
+    return parsed.filter(isRecord);
   }
 
   return [];
@@ -426,7 +426,7 @@ function scienceportalEventList(html: string, baseUrl: string, maxItems: number)
 
     const titleParts = [event.title];
     if (isRecord(event.date)) {
-      const dateLabel = getSciencePortalDateLabel(event.date as SciencePortalEventDate);
+      const dateLabel = getSciencePortalDateLabel(event.date);
       if (dateLabel) {
         titleParts.push(dateLabel);
       }

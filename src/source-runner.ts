@@ -56,10 +56,7 @@ function shouldSkipTransientSourceFailure(source: MonitorSource, error: unknown)
     return isTransientYoutubeRssFetchError(message);
   }
 
-  return (
-    source.type === "public_html_list_poll" &&
-    isTransientFetchError(message)
-  );
+  return source.type === "public_html_list_poll" && isTransientFetchError(message);
 }
 
 function formatTransientSkipMessage(source: MonitorSource, error: unknown): string {
