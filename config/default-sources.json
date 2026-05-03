@@ -7,7 +7,7 @@
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
     "enabled": true,
     "group": "standard-rss",
-    "maxItems": 10
+    "maxItems": 15
   },
   {
     "key": "revuestarlight-youtube",
@@ -17,7 +17,7 @@
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
     "enabled": true,
     "group": "standard-rss",
-    "maxItems": 10
+    "maxItems": 15
   },
   {
     "key": "society-of-starlight",

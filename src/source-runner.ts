@@ -255,6 +255,17 @@ function findNewXProfileItemsAfterGap(
   });
 }
 
+function findNewYoutubeRssItemsAfterGap(
+  source: MonitorSource,
+  items: MonitorItem[]
+): MonitorItem[] | undefined {
+  if (!isYoutubeRssSource(source)) {
+    return undefined;
+  }
+
+  return [...items].reverse();
+}
+
 /**
  * source 単位で監視を実行し、差分通知と state 更新を行う。
  *
@@ -343,7 +354,7 @@ async function runListSource(
     };
   }
 
-  let recoveredXProfileGap = false;
+  let recoveredGapMessage: string | undefined;
   let newItems: MonitorItem[];
   try {
     newItems = findNewItems(items, previousSeenItemIds);
@@ -351,16 +362,19 @@ async function runListSource(
     const recoveredItems =
       source.type === "x_profile_poll"
         ? findNewXProfileItemsAfterGap(items, previousSeenItemIds)
-        : undefined;
+        : findNewYoutubeRssItemsAfterGap(source, items);
     if (!recoveredItems) {
       throw error;
     }
-    recoveredXProfileGap = true;
+    recoveredGapMessage =
+      source.type === "x_profile_poll"
+        ? "X profile の取得窓落ちから復旧"
+        : "YouTube RSS の取得窓落ちから復旧";
     newItems = recoveredItems;
     logger.warn(
-      `x profile gap recovery: key=${source.key} newItems=${newItems.length} newestSeen=${formatLogItemId(
+      `list gap recovery: key=${source.key} newItems=${newItems.length} newestSeen=${formatLogItemId(
         previousSeenItemIds[0]
-      )} oldestFetched=${formatLogItemId(newItems[0]?.id)}`
+      )} oldestFetched=${formatLogItemId(newItems[0]?.id)} reason=${recoveredGapMessage}`
     );
   }
   logger.info(
@@ -402,8 +416,8 @@ async function runListSource(
     key: source.key,
     ok: true,
     changed: true,
-    message: recoveredXProfileGap
-      ? `${newItems.length} 件通知しました（X profile の取得窓落ちから復旧）`
+    message: recoveredGapMessage
+      ? `${newItems.length} 件通知しました（${recoveredGapMessage}）`
       : `${newItems.length} 件通知しました`
   };
 }

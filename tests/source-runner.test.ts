@@ -342,6 +342,45 @@ describe("runSource", () => {
     });
   });
 
+  it("YouTube RSS は取得窓落ち時に取得できた item を古い順に通知して復旧する", async () => {
+    vi.mocked(fetchRssSnapshot).mockResolvedValue({
+      kind: "list",
+      items: [item("newest"), item("newer"), item("oldest-fetched")]
+    });
+    vi.mocked(notifyDiscord).mockResolvedValue(undefined);
+    const state: MonitorState = {
+      sources: {
+        "youtube-rss": {
+          lastSeenItemId: "missing",
+          seenItemIds: ["missing"]
+        }
+      }
+    };
+    const youtubeSource: RssSource = {
+      ...rssSource,
+      key: "youtube-rss",
+      rssUrl: "https://www.youtube.com/feeds/videos.xml?channel_id=channel"
+    };
+
+    const result = await runSource(youtubeSource, state);
+
+    expect(result).toMatchObject({
+      ok: true,
+      changed: true,
+      message: "3 件通知しました（YouTube RSS の取得窓落ちから復旧）"
+    });
+    expect(notifyDiscord).toHaveBeenCalledTimes(3);
+    expect(vi.mocked(notifyDiscord).mock.calls[0]?.[1]).toMatchObject({
+      id: "oldest-fetched"
+    });
+    expect(vi.mocked(notifyDiscord).mock.calls[1]?.[1]).toMatchObject({ id: "newer" });
+    expect(vi.mocked(notifyDiscord).mock.calls[2]?.[1]).toMatchObject({ id: "newest" });
+    expect(state.sources["youtube-rss"]).toEqual({
+      lastSeenItemId: "newest",
+      seenItemIds: ["newest", "newer", "oldest-fetched", "missing"]
+    });
+  });
+
   it("YouTube RSS の 5xx は一時的な取得失敗としてスキップする", async () => {
     vi.mocked(fetchRssSnapshot).mockRejectedValue(
       new Error(
