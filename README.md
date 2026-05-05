@@ -1,97 +1,46 @@
 # Triple Monitor System
 
-GitHub Actions 上で RSS、X profile、Notion API ページ、公開 HTML 一覧を定期監視し、新着や更新を Discord webhook に通知する汎用監視基盤です。
+GitHub Actions 上で RSS、X profile、Notion、公開 HTML 一覧を定期監視し、新着や更新を Discord webhook へ通知する監視基盤です。
 
-実行環境は Node.js 24 LTS 前提です。GitHub Actions でも `actions/setup-node@v6` で Node 24 を明示し、ローカル開発環境との差異を減らしています。
+実行環境は Node.js 24 LTS 前提です。GitHub Actions でも `actions/setup-node@v6` で Node 24 を明示しています。
 
 利用者は、監視対象サービス、RSSHub、GitHub Actions、Discord、Notion、X などの利用規約と適用法令を確認し、許可された範囲でこのリポジトリを利用してください。
 
-## 概要
+## 全体像
 
-このリポジトリは複数種類の監視を同じ state 形式と通知処理で扱います。差分管理と通知の安全性を共通化すると、監視タイプが違っても「初回は通知しない」「通知成功後だけ既読にする」「1 source の失敗を他 source に波及させない」という運用ルールを揃えられます。
-
-workflow は `rss-monitor.yml`、`x-twitter-monitor.yml`、`x-profile-monitor.yml`、`notion-monitor.yml`、`public-site-monitor.yml`、`tourism-monitor.yml` に分けています。監視先の失敗原因、必要な Secrets、実行頻度を種類ごとに切り分けやすくするためです。監視セットごとに sources/state ファイルを分離し、workflow ごとに `MONITOR_SOURCES_PATH` と `MONITOR_STATE_PATH` で対象ファイルを明示します。
-
-RSSHub では取得しづらい X profile の親ポストや RT は、`x-profile-monitor.yml` の `x_profile_poll` で定期実行できます。RSSHub で取得する X/Twitter source は `x-twitter-monitor.yml` で `/twitter/user/...` route を使います。
-
-## ファイル構成
-
-```text
-.
-├─ .github/workflows/
-│  ├─ rss-monitor.yml
-│  ├─ x-twitter-monitor.yml
-│  ├─ x-profile-monitor.yml
-│  ├─ notion-monitor.yml
-│  ├─ public-site-monitor.yml
-│  ├─ tourism-monitor.yml
-│  └─ quality-check.yml
-├─ .github/actions/
-│  └─ commit-monitor-state/
-├─ .vscode/
-│  ├─ extensions.json
-│  └─ settings.json
-├─ config/
-│  ├─ default-sources.json
-│  └─ tourism-sources.json
-├─ src/
-│  ├─ config.ts
-│  ├─ discord.ts
-│  ├─ logger.ts
-│  ├─ main.ts
-│  ├─ notion.ts
-│  ├─ public-html.ts
-│  ├─ rss.ts
-│  ├─ x-profile.ts
-│  ├─ selector-strategies.ts
-│  ├─ source-runner.ts
-│  ├─ source-validator.ts
-│  ├─ state.ts
-│  ├─ types.ts
-│  ├─ utils.ts
-│  └─ validate-config.ts
-├─ tests/
-│  ├─ fixtures/
-│  │  └─ revuestarlight-news-list.html
-│  ├─ discord.test.ts
-│  ├─ logger.test.ts
-│  ├─ main.test.ts
-│  ├─ notion.test.ts
-│  ├─ quality-gates.test.ts
-│  ├─ rss.test.ts
-│  ├─ selector-strategies.test.ts
-│  ├─ source-runner.test.ts
-│  ├─ source-validator.test.ts
-│  ├─ state.test.ts
-│  └─ x-profile.test.ts
-├─ state/
-│  ├─ default-state.json
-│  └─ tourism-state.json
-├─ eslint.config.mjs
-├─ knip.json
-├─ package.json
-├─ tsconfig.json
-├─ tsconfig.typecheck.json
-├─ vitest.config.ts
-├─ .editorconfig
-├─ .prettierignore
-└─ .prettierrc.json
+```mermaid
+flowchart LR
+  Actions[GitHub Actions] --> App[Node.js Monitor]
+  Config[config/*.json] --> App
+  Secrets[GitHub Secrets] --> App
+  App --> Sources[RSS / X / Notion / HTML]
+  App --> State[state/*.json]
+  App --> Discord[Discord Webhook]
+  State --> Commit[State commit]
 ```
 
-## セットアップ
+## できること
 
-1. 依存関係をインストールします。
+| 種類           | 用途                                   | 主な workflow             |
+| -------------- | -------------------------------------- | ------------------------- |
+| RSS / Atom     | feed の新着監視                        | `rss-monitor.yml`         |
+| X/Twitter RSS  | RSSHub 経由の X/Twitter feed 監視      | `x-twitter-monitor.yml`   |
+| X profile      | 本人投稿や RT の profile polling       | `x-profile-monitor.yml`   |
+| Notion         | page / database の更新監視             | `notion-monitor.yml`      |
+| 公開 HTML 一覧 | イベント一覧やニュース一覧の新着監視   | `public-site-monitor.yml` |
+| Tourism set    | 観光イベント系 source の追加監視セット | `tourism-monitor.yml`     |
+
+## 最短セットアップ
+
+1. Node.js 24 を用意します。
+2. 依存関係をインストールします。
 
 ```bash
-node --version
 npm ci --ignore-scripts
 ```
 
-このリポジトリは npm supply-chain 攻撃で悪用されやすい install lifecycle script を通常実行しない方針です。`.npmrc` でも `ignore-scripts=true` を設定し、GitHub Actions でも `npm ci --ignore-scripts` を使います。依存追加時に install script が本当に必要な package を入れる場合は、package と script 内容を確認してから個別に許可してください。
-
-2. 監視セットごとの sources ファイルを編集し、使う source の `enabled` を `true` にします。既定セットは `config/default-sources.json`、追加セットは `config/tourism-sources.json` を使います。
-
-3. GitHub リポジトリの `Settings > Secrets and variables > Actions` に Secrets を登録します。
+3. `config/default-sources.json` または `config/tourism-sources.json` を編集し、使う source の `enabled` を `true` にします。
+4. GitHub リポジトリの `Settings > Secrets and variables > Actions` に必要な Secrets を登録します。
 
 ```text
 DISCORD_WEBHOOK_URL_MAIN
@@ -100,241 +49,58 @@ NOTION_TOKEN_MAIN
 TWITTER_AUTH_TOKEN
 ```
 
-4. GitHub Actions の `workflow_dispatch` か schedule で実行します。
+5. GitHub Actions の `workflow_dispatch` または schedule で監視を実行します。
 
-## 環境変数
+## ドキュメント
 
-監視アプリは設定ファイルに secret の値を直接書かず、環境変数名だけを参照します。GitHub Actions では Secrets から必要な値を workflow の `env` に渡してください。
+| ドキュメント                                   | 内容                                   |
+| ---------------------------------------------- | -------------------------------------- |
+| [概要](docs/01-overview.md)                    | システムの目的、監視セット、重要ルール |
+| [運用手順](docs/02-operations.md)              | 日常確認、手動実行、失敗時の一次対応   |
+| [設定変更](docs/03-configuration.md)           | source 追加、環境変数、Secrets、設定例 |
+| [設計](docs/04-architecture.md)                | 実装構造、処理フロー、state 更新ルール |
+| [トラブルシュート](docs/05-troubleshooting.md) | よくあるエラーと確認ポイント           |
+| [図一覧](docs/diagrams.md)                     | Mermaid 図のまとめ                     |
 
-| 環境変数名                    | 必須タイミング            | 説明                                                                                 |
-| ----------------------------- | ------------------------- | ------------------------------------------------------------------------------------ |
-| `MONITOR_SOURCES_PATH`        | 任意                      | 読み込む sources ファイルです。未指定時は `config/default-sources.json` を使います。 |
-| `MONITOR_STATE_PATH`          | 任意                      | 読み書きする state ファイルです。未指定時は `state/default-state.json` を使います。  |
-| `DISCORD_WEBHOOK_URL_MAIN`    | 既定通知先                | 既定セットの source で使う Discord webhook URL です。                                |
-| `DISCORD_WEBHOOK_URL_TOURISM` | 追加通知先                | 追加セットの source で使う Discord webhook URL です。                                |
-| `NOTION_TOKEN_MAIN`           | Notion 監視               | Notion integration token です。                                                      |
-| `TWITTER_AUTH_TOKEN`          | X/Twitter、X profile 監視 | RSSHub の X/Twitter route と `x_profile_poll` で使う X 認証情報です。                |
-
-`MONITOR_SOURCES_PATH` はカンマ区切りで複数ファイルを指定できます。読み込み時は source を結合し、同じ `key` が複数ファイルにある場合は後続ファイルの定義を採用します。
+## よく使うコマンド
 
 ```bash
-MONITOR_SOURCES_PATH=config/default-sources.json,config/tourism-sources.json
-```
-
-`MONITOR_STATE_PATH` もカンマ区切りを受け付けますが、state は実行中に更新されるため先頭ファイルだけを読み書きします。
-
-```bash
-MONITOR_STATE_PATH=state/tourism-state.json
-```
-
-ローカルテストでは `MONITOR_SOURCES_PATH` と `MONITOR_STATE_PATH` を OS の一時ディレクトリ配下に差し替えられます。本番運用ではリポジトリ内の `config/` と `state/` 配下に置いてください。
-
-## Sources と State
-
-sources ファイルは JSON 配列です。現在は次のように監視セットごとのペアで管理します。
-
-| 監視セット | sources                       | state                      | 主な workflow                                                                                                        |
-| ---------- | ----------------------------- | -------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| 既定セット | `config/default-sources.json` | `state/default-state.json` | `rss-monitor.yml`、`x-twitter-monitor.yml`、`x-profile-monitor.yml`、`notion-monitor.yml`、`public-site-monitor.yml` |
-| 追加セット | `config/tourism-sources.json` | `state/tourism-state.json` | `tourism-monitor.yml`                                                                                                |
-
-`MONITOR_SOURCES_PATH` と `MONITOR_STATE_PATH` は workflow ごとに明示します。これにより、ある監視セットのテストや実行で別セットの state を更新してしまう事故を避けられます。
-
-```bash
-MONITOR_STATE_PATH=state/default-state.json
-MONITOR_SOURCES_PATH=config/default-sources.json
-```
-
-パスはリポジトリ内の `config/` または `state/` 配下に制限しています。テストでは OS の一時ディレクトリ配下の絶対パスだけを例外的に許可します。
-
-全 source 共通で次のキーを持ちます。
-
-| キー             | 説明                                                                                                                  |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `key`            | state の識別子です。重複不可です。                                                                                    |
-| `type`           | `rss`、`x_profile_poll`、`notion_api_page_poll`、`notion_api_database_poll`、`public_html_list_poll` のいずれかです。 |
-| `label`          | Discord 通知のタイトルです。                                                                                          |
-| `webhookEnvName` | Discord webhook URL を入れた環境変数名です。                                                                          |
-| `enabled`        | `true` の source だけ監視します。                                                                                     |
-| `group`          | 任意の実行グループです。RSS workflow の分割実行に使います。                                                           |
-
-RSS では `rssUrl` と任意の `maxItems` を使います。X profile では `screenName`、`xAuthTokenEnvName`、任意の `maxItems`、`maxAgeHours`、`includeRetweets` を使います。Notion page では `pageId` と `notionTokenEnvName`、Notion database では `databaseId` と `notionTokenEnvName` を使います。公開 HTML では `url`、`selectorStrategy`、任意の `maxItems` に加えて、必要なら `pagination` を使います。
-
-## 監視タイプ
-
-### RSS
-
-RSS/Atom XML を取得し、`link` を item ID として扱います。前回の `lastSeenItemId` より新しい item を古い順に Discord へ通知します。
-
-通常 RSS は `rss-monitor.yml` が `group=standard-rss` だけを実行します。X/Twitter の RSS は `x-twitter-monitor.yml` が GitHub Actions runner 内で RSSHub service を起動し、`group=x-twitter` の source だけを `http://127.0.0.1:1200/twitter/user/...` から取得します。RSSHub の X/Twitter route は認証が必要なため、RSSHub のドキュメントと対象サービスの利用条件を確認したうえで、必要な認証情報を GitHub Secrets の `TWITTER_AUTH_TOKEN` に登録してください。
-
-X/Twitter source の取得挙動は RSSHub の route 実装に依存します。取得漏れや空 feed が出る場合は、RSSHub の公式ドキュメントと対象サービスの利用条件を確認し、運用上許容できる route だけを使ってください。Actions ログの `list snapshot` には取得 item 数、既読交差数、先頭 10 件の item ID サンプルが出ます。
-
-RSSHub は workflow 内の一時 container として起動するため、永続 cache は持ちません。既読管理はこのリポジトリの state ファイルが担当します。外部サービスへの負荷を抑えるため、通常は現在の 30 分間隔を基準にしてください。
-
-RSSHub の container image は `ghcr.io/diygod/rsshub@sha256:...` で digest 固定しています。これにより、workflow ファイルを変えない限り同じ image を使い続け、予期しない upstream 更新を避けます。X/Twitter の取得が壊れた場合や定期更新時は、GHCR の `latest` digest を確認し、`x-twitter-monitor.yml` の image digest を更新してから `X Twitter Monitor` を手動実行してください。
-
-### X Profile Poll
-
-`x_profile_poll` は X の profile timeline から通知対象を抽出します。ツリー内の返信そのものは通知せず、本人投稿かつ `in_reply_to_status_id_str` がない親ポストを抽出します。`includeRetweets=true` の場合は本人が行った RT も対象に含めます。検索 route やページングは使わず、1 source あたり cookie 初期化、user lookup、timeline 取得を各 1 回に抑えて、外部サービスへのアクセス回数を増やしすぎないようにしています。
-
-`x_profile_poll` の source は `group=x-profile` として登録し、`x-profile-monitor.yml` で定期実行します。RSSHub 側にも同じアカウントの source を持つ場合は、重複通知を避けるためどちらか一方を無効化してください。`maxAgeHours` で古すぎる投稿を除外し、過去ポストの大量通知を避けます。X の取得仕様が変わった場合に備え、一部の endpoint は環境変数で差し替えられるようにしています。
-
-### Notion API
-
-Notion の retrieve page API または retrieve database API を呼び出し、`last_edited_time` を `lastSeenVersion` と比較します。Notion integration を作成し、対象ページまたは対象データベースに integration を招待したうえで、internal integration token を GitHub Secrets に登録してください。database ID を `notion_api_page_poll` に指定すると Notion API は `Provided ID ... is a database, not a page` を返すため、database 監視には `notion_api_database_poll` と `databaseId` を使います。
-
-### 公開 HTML 一覧
-
-HTML はサイト改修で壊れやすいため、抽出処理は `selector-strategies.ts` のホワイトリストに分離しています。外部入力の selector 文字列をそのまま使わず、許可した strategy 関数だけを実行します。新しい HTML 一覧を監視する場合は、対象サイトごとに strategy を追加してください。
-
-`walkerplus_event_list` のように、一覧本体の item コンテナを先に特定し、その中の詳細リンクだけを拾う戦略にすると保守しやすくなります。Walkerplus では `/event/...` のリンクがランキングや関連記事にも現れるため、`li.m-mainlist__item` 配下だけを対象にして誤検知を避けています。
-
-複数ページをたどる必要がある場合も、抽出は `selectorStrategy`、URL 生成は `pagination.strategy` に分けてください。Walkerplus 用には `pagination.strategy=walkerplus_event_list_pages` を用意してあり、`maxPages` 件まで `/2.html`、`/3.html` のように順番に取得します。
-
-## 初回挙動と state
-
-初回実行時は既存記事や既存更新を大量通知しないため、通知せずに用途ごとの state ファイルへ現在位置だけを保存します。RSS と公開 HTML では `lastSeenItemId` に加えて短い `seenItemIds` 履歴を保存し、一覧順の軽い揺れに備えます。
-
-2 回目以降は差分を検知し、通知が成功した item または version だけ state を進めます。通知に失敗した場合は未通知扱いのまま残るため、次回再試行できます。取得結果に既読履歴がまったく含まれない場合は、重複通知を避けるため source 失敗として扱います。`maxItems` が小さすぎる、対象サイトの並び順が変わった、HTML 構造が変わった、といった原因を確認してください。
-
-## 動作確認
-
-```bash
-npm run typecheck
 npm run build
 npm run validate:config
-npm run lint
-npm run knip
-npm run audit
-npm test
 npm run test:coverage
-npm run format:check
-npm run monitor:rss
+npm run check
+```
+
+個別監視をローカルで動かす場合は、必要な環境変数を設定してから実行します。
+
+```bash
 npm run monitor:rss:standard
-npm run monitor:x-twitter
 npm run monitor:x-profile
 npm run monitor:notion
 npm run monitor:public-html
 npm run monitor:tourism
 ```
 
-ローカルで実行する場合は、必要な環境変数を設定してください。
+## リポジトリ構成
 
-```bash
-export DISCORD_WEBHOOK_URL_MAIN="https://discord.com/api/webhooks/..."
-export DISCORD_WEBHOOK_URL_TOURISM="https://discord.com/api/webhooks/..."
-export NOTION_TOKEN_MAIN="secret_..."
-export TWITTER_AUTH_TOKEN="..."
+```text
+.
+├─ .github/
+│  ├─ actions/commit-monitor-state/
+│  └─ workflows/
+├─ config/
+├─ docs/
+├─ src/
+├─ state/
+├─ tests/
+├─ package.json
+└─ README.md
 ```
 
-PowerShell の場合:
+## 重要な運用ルール
 
-```powershell
-$env:DISCORD_WEBHOOK_URL_MAIN="https://discord.com/api/webhooks/..."
-$env:DISCORD_WEBHOOK_URL_TOURISM="https://discord.com/api/webhooks/..."
-$env:NOTION_TOKEN_MAIN="secret_..."
-$env:TWITTER_AUTH_TOKEN="..."
-```
-
-## トラブルシュート
-
-- `必要な環境変数 ... が設定されていません`: `webhookEnvName` または `notionTokenEnvName` と GitHub Secrets の名前を揃えてください。
-- `TWITTER_AUTH_TOKEN secret is required for X/Twitter RSSHub routes.`: GitHub Secrets に `TWITTER_AUTH_TOKEN` を登録してください。
-- `RSSHub did not become ready in time.`: RSSHub container の起動失敗、GHCR 側の一時障害、または runner のネットワーク制限を確認してください。
-- X/Twitter だけ失敗する場合: `X Twitter Monitor`、`TWITTER_AUTH_TOKEN`、RSSHub digest を確認してください。通常 RSS は別 workflow の `RSS Monitor` で切り分けられます。
-- `HTML一覧から記事リンクを抽出できませんでした`: 対象サイトの HTML 構造が変わった可能性があります。`selector-strategies.ts` の strategy を更新してください。
-- `既読 item が取得結果に見つかりません`: `maxItems` を増やすか、RSS/HTML の取得順と selector strategy を確認してください。
-- `Provided ID ... is a database, not a page`: `type` を `notion_api_database_poll` にし、`pageId` ではなく `databaseId` を使ってください。
-- `Notion APIレスポンスに last_edited_time がありません`: `pageId`、`databaseId`、integration の権限を確認してください。
-- Actions は 1 source でも失敗すると最後に失敗扱いになります。ただし source ごとに try/catch しているため、他 source の監視は継続されます。
-
-## セキュリティ注意
-
-Discord webhook URL、Notion token、X/Twitter 関連の認証情報は GitHub Secrets に登録し、sources ファイルには環境変数名やローカル RSSHub URL だけを書いてください。ログには URL や token を出さない実装にしていますが、設定値そのものをコミットしない運用を守ってください。
-
-RSSHub は `x-twitter-monitor.yml` の service container として runner 内だけで使います。通常の X/Twitter RSS 監視では `TWITTER_AUTH_TOKEN` は RSSHub と secret 事前チェックの step にだけ渡し、監視アプリ本体には渡しません。`x-profile-monitor.yml` は X profile 取得を行うため、監視アプリ本体にも `TWITTER_AUTH_TOKEN` を渡します。X/Twitter 関連の認証情報はアカウントへのアクセス権に近い機密値なので、定期的に更新し、不要になったら GitHub Secrets から削除してください。
-
-## 開発者向け品質チェック
-
-監視処理は「通知する」「state を進める」という副作用を持つため、型チェック、lint、format を分けて確認します。破壊的な変更を早めに見つけるため、pull request では `quality-check.yml` が同じ確認を実行します。
-
-```bash
-npm run typecheck
-npm run build
-npm run validate:config
-npm run lint
-npm run knip
-npm run test:coverage
-npm run format:check
-```
-
-ローカルで pull request 前の品質ゲートをまとめて確認する場合:
-
-```bash
-npm run check
-```
-
-整形を適用する場合:
-
-```bash
-npm run format
-```
-
-ESLint の自動修正を試す場合:
-
-```bash
-npm run lint:fix
-```
-
-`typecheck` は TypeScript の型安全性を確認します。`strict`、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes` を有効にしているのは、state の未定義アクセスや optional property の扱いを曖昧にしないためです。監視基盤では「通知済みかどうか」の境界が重要なので、型で表現できる不整合はコンパイル時に止めます。
-
-`lint` は危険な書き方を検出します。特に `no-floating-promises` は、Discord 通知や state 保存の Promise を待ち忘れて処理が進む事故を防ぐために重要です。また、`src/logger.ts` 以外での `console` 直書きを禁止しています。ログは secret マスクを通す必要があるため、出力は `logger` 経由にしてください。
-
-`knip` は未使用 export と未使用 dependencies を検出します。ESLint だけでは NodeNext の `.js` import specifier や CLI entrypoint 周りの判定が難しいため、`knip.json` で `src/main.ts` と `src/validate-config.ts` を entrypoint として明示しています。
-
-`format:check` は Prettier による整形差分を検出します。lint は危険なコードや保守性の問題を見つける役割、format は見た目の揺れをなくす役割です。レビューではロジックの差分に集中できるよう、整形は Prettier に任せます。
-
-`npm test` は Vitest でユニットテストを実行します。まずは `source-runner.ts` の通知順と state 保全、`source-validator.ts` の fail-fast を重点的に確認しています。
-
-`test:coverage` は Vitest coverage を実行し、全体の statements、branches、functions、lines に下限を設けます。通知処理や state 更新の退行を早く検出するため、CI では通常の `npm test` ではなく coverage 付きのテストを使います。
-
-`validate:config` は build 済みの `dist/validate-config.js` を実行し、実際の sources と state を検証します。既定ではリポジトリ内の監視セットを検証し、必要に応じて `MONITOR_SOURCES_PATH` と `MONITOR_STATE_PATH` で個別セットや複数 sources を指定できます。設定ファイルの typo や壊れた state は監視実行時ではなく pull request 時点で検出します。
-
-`quality-check.yml` は監視 workflow とは分けています。監視の失敗とコード品質の失敗を別々に追跡でき、開発中の pull request と default branch への push では secret scan、`npm ci --ignore-scripts`、`typecheck`、`build`、`validate:config`、`lint`、`knip`、`audit`、`test:coverage`、`format:check`、`actionlint` をまとめて確認します。`actionlint` は workflow の YAML 構文、`schedule`、`concurrency` などの記述ミスを早期に検出するために使います。`quality-gates.test.ts` では RSSHub image の digest 固定、`TWITTER_AUTH_TOKEN` の渡し先、通常 RSS と X/Twitter RSS の group 分割、npm install 時の lifecycle script 無効化も検査します。
-
-secret scan は Gitleaks を使い、Discord webhook URL、Notion token、その他 API token の誤コミットを検出します。検出時は CI を失敗させます。PR コメント権限を増やさないため `GITLEAKS_ENABLE_COMMENTS=false` にしています。Organization 配下のリポジトリで `gitleaks/gitleaks-action` を使う場合は、必要に応じて `GITLEAKS_LICENSE` を GitHub Secrets に登録してください。
-
-`gitleaks/gitleaks-action` は Node.js 20 runtime の action なので、`quality-check.yml` では `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24=true` を設定し、GitHub Actions runner の Node.js 24 強制切替を先取りしています。将来 Gitleaks action が Node.js 24 対応版を出した場合は、SHA を更新してこの互換設定が不要か確認してください。
-
-`audit` は `npm audit` を実行し、dependencies と devDependencies の既知脆弱性を検出します。GitHub Actions 上では devDependencies も build、lint、test に使うため、CI では `--omit=dev` ではなく全体を確認します。一方でネットワーク依存のチェックなので、ローカルの `npm run check` には含めていません。
-
-Dependabot は npm dependencies と GitHub Actions を週次で確認します。各 workflow には `timeout-minutes` を設定し、外部サイトや API の一時的な停止で Actions が長時間占有されることを防ぎます。
-
-GitHub Actions の action pinning は、公式 action と third-party action で扱いを分けます。`actions/checkout` と `actions/setup-node` は公式 action のため major tag を維持し、Dependabot で更新を追います。一方で third-party action は supply-chain リスクを下げるため SHA 固定します。現在は `rhysd/actionlint` と `gitleaks/gitleaks-action` を SHA 固定しています。
-
-監視 workflow の state commit 処理は `.github/actions/commit-monitor-state` の composite action に集約しています。各 workflow は commit message と `state-path` を渡すため、retry や rebase 処理を修正するときの差分漏れを避けられます。
-
-CLI smoke test は build 済みの `dist/main.js` を実際に起動します。外部通信を避けるため、`MONITOR_SOURCES_PATH` と `MONITOR_STATE_PATH` でテスト用ファイルへ差し替えられるようにしています。
-
-新しいテストを追加する場合は、優先度の高い順に以下を対象にしてください。
-
-1. `utils.ts` の timeout、HTTP error、JSON parse helper
-2. `logger.ts` の secret mask
-3. workflow の state commit retry を検証する仕組み
-4. 実サイト HTML の構造変更に備えた selector fixture の継続追加
-
-Windows や制限付き sandbox では、Vitest が内部で使う esbuild の process spawn が拒否される場合があります。通常の GitHub Actions Ubuntu runner では問題になりにくいですが、ローカルで `EPERM` が出る場合は、権限やセキュリティソフトの制限を確認してください。
-
-開発時の推奨フロー:
-
-1. 実装する
-2. `npm run typecheck`
-3. `npm run build`
-4. `npm run validate:config`
-5. `npm run lint`
-6. `npm run knip`
-7. `npm run test:coverage`
-8. `npm run format:check`
-9. 必要なら `npm run format` または `npm run lint:fix`
-10. GitHub Actions の `Quality Check` を確認する
+- 初回実行では既存記事を通知せず、現在位置だけを state に保存します。
+- Discord 通知に成功した item / version だけ state を進めます。
+- 1 source が失敗しても他 source の監視は継続します。
+- token、webhook URL、認証情報は GitHub Secrets に置き、config へ直接書きません。
+- HTML 一覧の抽出は `selector-strategies.ts` の許可済み strategy だけで行います。
