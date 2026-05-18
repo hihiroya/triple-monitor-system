@@ -1,14 +1,5 @@
 {
   "sources": {
-    "notion-database-page": {
-      "lastSeenVersion": "2025-09-23T05:34:00.000Z"
-    },
-    "notion-kirinlog-page": {
-      "lastSeenVersion": "2026-05-06T14:19:00.000Z"
-    },
-    "notion-top-page": {
-      "lastSeenVersion": "2026-04-19T05:43:00.000Z"
-    },
     "revuestarlight-news": {
       "lastSeenItemId": "https://revuestarlight.com/news/category/animation/",
       "seenItemIds": [
@@ -22,25 +13,6 @@
         "https://revuestarlight.com/news/category/music/",
         "https://revuestarlight.com/news/category/musical/",
         "https://revuestarlight.com/news/category/uncategorized/"
-      ]
-    },
-    "society-of-starlight-youtube": {
-      "lastSeenItemId": "https://www.youtube.com/watch?v=QXN-P36gy_k",
-      "seenItemIds": [
-        "https://www.youtube.com/watch?v=QXN-P36gy_k",
-        "https://www.youtube.com/watch?v=NOceAeS4bms",
-        "https://www.youtube.com/watch?v=lqVHU4ioMFc",
-        "https://www.youtube.com/watch?v=wBxYRFW-Ad8",
-        "https://www.youtube.com/watch?v=Ef37WZOH440",
-        "https://www.youtube.com/watch?v=mDkRY1oAJrs",
-        "https://www.youtube.com/watch?v=Hoq-lWX6NpE",
-        "https://www.youtube.com/watch?v=qZFqzhDlGvU",
-        "https://www.youtube.com/watch?v=9rivRLfDOnY",
-        "https://www.youtube.com/watch?v=aXwvKqiJBzU",
-        "https://www.youtube.com/watch?v=wtfzSEqH0no",
-        "https://www.youtube.com/watch?v=KxHr2oEZlRU",
-        "https://www.youtube.com/watch?v=yx6h--oYAeI",
-        "https://www.youtube.com/watch?v=Le-RnFix4wU"
       ]
     },
     "revuestarlight-youtube": {
@@ -76,54 +48,6 @@
         "https://www.youtube.com/watch?v=P1dk2A8YMCU",
         "https://www.youtube.com/watch?v=AsHTt54tUCo",
         "https://www.youtube.com/watch?v=ScbtJ4SuWqE"
-      ]
-    },
-    "society-of-starlight": {
-      "lastSeenItemId": "https://society-of-starlight.com/2025%e5%b9%b411%e6%9c%888%e6%97%a5%e5%9c%9f-%e7%ac%ac3%e5%9b%9e%e5%a4%a7%e4%bc%9a-%e5%8f%82%e5%8a%a0%e7%94%b3%e3%81%97%e8%be%bc%e3%81%bf%e9%96%8b%e5%a7%8b/",
-      "seenItemIds": [
-        "https://society-of-starlight.com/2025%e5%b9%b411%e6%9c%888%e6%97%a5%e5%9c%9f-%e7%ac%ac3%e5%9b%9e%e5%a4%a7%e4%bc%9a-%e5%8f%82%e5%8a%a0%e7%94%b3%e3%81%97%e8%be%bc%e3%81%bf%e9%96%8b%e5%a7%8b/",
-        "https://society-of-starlight.com/%e3%82%ad%e3%83%aa%e3%83%b3%e5%af%84%e5%90%88%e3%82%b9%e3%83%9a%e3%83%bc%e3%82%b9%e9%96%8b%e5%82%ac%e3%81%ae%e3%81%8a%e7%9f%a5%e3%82%89%e3%81%9b/",
-        "https://society-of-starlight.com/new-4/",
-        "https://society-of-starlight.com/news-3/",
-        "https://society-of-starlight.com/%e7%ac%ac2%e5%9b%9e%e5%a4%a7%e4%bc%9a%e5%8f%82%e5%8a%a0%e7%94%b3%e3%81%97%e8%be%bc%e3%81%bf/",
-        "https://society-of-starlight.com/%e5%ad%a6%e4%bc%9a%e5%85%ac%e5%bc%8f%e3%82%b5%e3%82%a4%e3%83%88%e3%82%aa%e3%83%bc%e3%83%97%e3%83%b3%ef%bc%81/"
-      ]
-    },
-    "Starlight_Soc": {
-      "lastSeenItemId": "https://x.com/Starlight_Soc/status/2053400046197166173",
-      "seenItemIds": [
-        "https://x.com/Starlight_Soc/status/2053400046197166173",
-        "https://x.com/Starlight_Soc/status/2052013749973008755",
-        "https://x.com/Starlight_Soc/status/2052010376624271567",
-        "https://x.com/Starlight_Soc/status/2051995910746566990",
-        "https://x.com/Starlight_Soc/status/2051995203444302205",
-        "https://x.com/Starlight_Soc/status/2052013755593269623",
-        "https://x.com/Starlight_Soc/status/2051662316819878191",
-        "https://x.com/Starlight_Soc/status/2051229857619874071",
-        "https://x.com/Starlight_Soc/status/2049835555077460052",
-        "https://x.com/Starlight_Soc/status/2049835219965059474",
-        "https://x.com/Starlight_Soc/status/2049695290891092241",
-        "https://x.com/Starlight_Soc/status/2049848679943823699",
-        "https://x.com/Starlight_Soc/status/2044763444227056009",
-        "https://x.com/Starlight_Soc/status/2044762873520701852",
-        "https://x.com/Starlight_Soc/status/2044704388569309351",
-        "https://x.com/Starlight_Soc/status/2044030336846434507",
-        "https://x.com/Starlight_Soc/status/2044030169267220852",
-        "https://x.com/Starlight_Soc/status/2039668468426088826",
-        "https://x.com/Starlight_Soc/status/2036459920489586850",
-        "https://x.com/Starlight_Soc/status/2036459315985523110",
-        "https://x.com/Starlight_Soc/status/2036428439524352434",
-        "https://x.com/Starlight_Soc/status/2036427827785114059",
-        "https://x.com/Starlight_Soc/status/2036426970557559218",
-        "https://x.com/Starlight_Soc/status/2036373867602780216",
-        "https://x.com/Starlight_Soc/status/2034589439142625391",
-        "https://x.com/Starlight_Soc/status/2032079051922575645",
-        "https://x.com/Starlight_Soc/status/2032078705821172224",
-        "https://x.com/Starlight_Soc/status/2031995608291295489",
-        "https://x.com/Starlight_Soc/status/2029507619199783016",
-        "https://x.com/Starlight_Soc/status/2028801759301566498",
-        "https://x.com/Starlight_Soc/status/2024456577290584345",
-        "https://x.com/Starlight_Soc/status/2024453750317076826"
       ]
     },
     "starlight_9thEX": {
