@@ -1,15 +1,5 @@
 [
   {
-    "key": "society-of-starlight-youtube",
-    "type": "rss",
-    "label": "スタァライト学会Youtubeチャンネル",
-    "rssUrl": "https://www.youtube.com/feeds/videos.xml?channel_id=UCqKm7Ux0slXFK8mglrjqDwg",
-    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
-    "enabled": true,
-    "group": "standard-rss",
-    "maxItems": 15
-  },
-  {
     "key": "revuestarlight-youtube",
     "type": "rss",
     "label": "スタァライトチャンネル",
@@ -18,26 +8,6 @@
     "enabled": true,
     "group": "standard-rss",
     "maxItems": 15
-  },
-  {
-    "key": "society-of-starlight",
-    "type": "rss",
-    "label": "スタァライト学会",
-    "rssUrl": "https://society-of-starlight.com/feed/",
-    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
-    "enabled": true,
-    "group": "standard-rss",
-    "maxItems": 10
-  },
-  {
-    "key": "Starlight_Soc",
-    "type": "rss",
-    "label": "スタァライト学会 事務局",
-    "rssUrl": "http://127.0.0.1:1200/twitter/user/Starlight_Soc",
-    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
-    "enabled": true,
-    "group": "x-twitter",
-    "maxItems": 50
   },
   {
     "key": "starlight_9thEX",
@@ -93,30 +63,10 @@
     "maxItems": 50
   },
   {
-    "key": "notion-top-page",
-    "type": "notion_api_database_poll",
-    "label": "スタァライト学会Wiki",
-    "databaseId": "2192748f091781ebab20c46d12e324b2",
-    "notionTokenEnvName": "NOTION_TOKEN_MAIN",
-    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
-    "enabled": true,
-    "group": "notion"
-  },
-  {
     "key": "notion-database-page",
     "type": "notion_api_page_poll",
     "label": "スタァライト学会データベース",
     "pageId": "2192748f09178184ba9dec57ef1a7a65",
-    "notionTokenEnvName": "NOTION_TOKEN_MAIN",
-    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
-    "enabled": true,
-    "group": "notion"
-  },
-  {
-    "key": "notion-kirinlog-page",
-    "type": "notion_api_database_poll",
-    "label": "キリン寄合ログ",
-    "databaseId": "2da2748f091781d59db4d7b0afac5a3b",
     "notionTokenEnvName": "NOTION_TOKEN_MAIN",
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
     "enabled": true,
