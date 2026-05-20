@@ -11,13 +11,16 @@
   },
   {
     "key": "starlight_9thEX",
-    "type": "rss",
+    "type": "x_profile_poll",
     "label": "少女☆歌劇 レヴュースタァライト 9th Anniversary EXHIBITION",
-    "rssUrl": "http://127.0.0.1:1200/twitter/user/starlight_9thEX",
+    "screenName": "starlight_9thEX",
+    "xAuthTokenEnvName": "TWITTER_AUTH_TOKEN",
     "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
     "enabled": true,
-    "group": "x-twitter",
-    "maxItems": 50
+    "group": "x-profile",
+    "maxItems": 100,
+    "maxAgeHours": 168,
+    "includeRetweets": true
   },
   {
     "key": "revuestarlight",
