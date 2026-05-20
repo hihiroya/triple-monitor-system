@@ -23,16 +23,6 @@
     "includeRetweets": true
   },
   {
-    "key": "revuestarlight",
-    "type": "rss",
-    "label": "少女☆歌劇 レヴュースタァライト",
-    "rssUrl": "http://127.0.0.1:1200/twitter/user/revuestarlight",
-    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
-    "enabled": false,
-    "group": "x-twitter",
-    "maxItems": 50
-  },
-  {
     "key": "revuestarlight-x-profile",
     "type": "x_profile_poll",
     "label": "少女☆歌劇 レヴュースタァライト X",
@@ -64,16 +54,6 @@
     "enabled": true,
     "group": "x-twitter",
     "maxItems": 50
-  },
-  {
-    "key": "notion-database-page",
-    "type": "notion_api_page_poll",
-    "label": "スタァライト学会データベース",
-    "pageId": "2192748f09178184ba9dec57ef1a7a65",
-    "notionTokenEnvName": "NOTION_TOKEN_MAIN",
-    "webhookEnvName": "DISCORD_WEBHOOK_URL_MAIN",
-    "enabled": true,
-    "group": "notion"
   },
   {
     "key": "revuestarlight-news",
