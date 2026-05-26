@@ -1,0 +1,13 @@
+name: Setup npm
+description: Install and report an npm CLI version that enforces install source allow flags.
+
+runs:
+  using: composite
+  steps:
+    - name: Install npm 11.15.0
+      shell: bash
+      run: npm install --global npm@11.15.0
+
+    - name: Show npm version
+      shell: bash
+      run: npm --version
