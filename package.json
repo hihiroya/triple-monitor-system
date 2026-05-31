@@ -36,7 +36,7 @@
     "@eslint/js": "^10.0.1",
     "@types/node": "^25.6.2",
     "@vitest/coverage-v8": "^4.1.7",
-    "eslint": "^10.3.0",
+    "eslint": "^10.4.0",
     "globals": "^17.6.0",
     "knip": "^6.12.2",
     "prettier": "^3.8.3",
