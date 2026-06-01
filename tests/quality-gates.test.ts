@@ -68,7 +68,7 @@ describe("quality gate helpers", () => {
       "contents: write"
     );
     requireText(
-      workflow.match(/image: ghcr\.io\/diygod\/rsshub@sha256:[a-f0-9]{64}/)?.[0] ?? "",
+      workflow.match(/image: ghcr\.io\/diygod\/rsshub:\d{4}-\d{2}-\d{2}@sha256:[a-f0-9]{64}/)?.[0] ?? "",
       "RSSHub image digest"
     );
     requireText(
