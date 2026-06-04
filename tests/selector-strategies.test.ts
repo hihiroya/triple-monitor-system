@@ -8,6 +8,7 @@ describe("runSelectorStrategy", () => {
     const html = `
       <main>
         <a href="/news/">ニュース一覧</a>
+        <a href="/news/category/goods/">#Goods</a>
         <a href="/news/10001/">  公演   情報  </a>
         <a href="https://revuestarlight.com/news/10002/">グッズ情報</a>
         <a href="https://outside.example/news/99999/">外部ニュース</a>

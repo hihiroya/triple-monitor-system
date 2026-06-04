@@ -258,8 +258,7 @@ function revuestarlightNewsList(html: string, baseUrl: string, maxItems: number)
     const url = new URL(absoluteUrl);
     if (
       url.origin !== base.origin ||
-      !url.pathname.startsWith("/news/") ||
-      url.pathname === "/news/"
+      !/^\/news\/\d+\/$/.test(url.pathname)
     ) {
       return;
     }

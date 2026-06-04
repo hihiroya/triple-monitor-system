@@ -1,18 +1,18 @@
 {
   "sources": {
     "revuestarlight-news": {
-      "lastSeenItemId": "https://revuestarlight.com/news/category/animation/",
+      "lastSeenItemId": "https://revuestarlight.com/news/11070/",
       "seenItemIds": [
-        "https://revuestarlight.com/news/category/animation/",
-        "https://revuestarlight.com/news/category/book/",
-        "https://revuestarlight.com/news/category/event/",
-        "https://revuestarlight.com/news/category/game/",
-        "https://revuestarlight.com/news/category/goods/",
-        "https://revuestarlight.com/news/category/live/",
-        "https://revuestarlight.com/news/category/media/",
-        "https://revuestarlight.com/news/category/music/",
-        "https://revuestarlight.com/news/category/musical/",
-        "https://revuestarlight.com/news/category/uncategorized/"
+        "https://revuestarlight.com/news/11070/",
+        "https://revuestarlight.com/news/11073/",
+        "https://revuestarlight.com/news/11055/",
+        "https://revuestarlight.com/news/11036/",
+        "https://revuestarlight.com/news/11008/",
+        "https://revuestarlight.com/news/10970/",
+        "https://revuestarlight.com/news/10964/",
+        "https://revuestarlight.com/news/10889/",
+        "https://revuestarlight.com/news/10850/",
+        "https://revuestarlight.com/news/10855/"
       ]
     },
     "revuestarlight-youtube": {
