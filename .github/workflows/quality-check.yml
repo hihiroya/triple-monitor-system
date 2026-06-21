@@ -11,10 +11,6 @@ on:
 permissions:
   contents: read
 
-env:
-  # gitleaks/gitleaks-action が Node.js 20 runtime のため、GitHub の Node.js 24 強制切替を先取りする。
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-
 concurrency:
   group: quality-check-${{ github.ref }}
   cancel-in-progress: true
@@ -30,8 +26,8 @@ jobs:
           fetch-depth: 0
 
       - name: Scan secrets
-        # gitleaks/gitleaks-action v2.3.9。third-party action は supply-chain リスクを下げるため SHA 固定する。
-        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7
+        # gitleaks/gitleaks-action v3.0.0。third-party action は supply-chain リスクを下げるため SHA 固定する。
+        uses: gitleaks/gitleaks-action@e0c47f4f8be36e29cdc102c57e68cb5cbf0e8d1e
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
