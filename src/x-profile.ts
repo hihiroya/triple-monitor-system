@@ -553,9 +553,14 @@ export async function fetchXProfileSnapshot(source: XProfileSource): Promise<Lis
 
   const seen = new Set<string>();
   const items: MonitorItem[] = [];
-  for (const entry of extractTimelineEntries(timelineResponse)) {
+  let extractedTweetCount = 0;
+  const timelineEntries = extractTimelineEntries(timelineResponse);
+  for (const entry of timelineEntries) {
     const tweet = extractTweetResult(entry);
     const legacy = tweet ? legacyFromTweet(tweet) : undefined;
+    if (legacy) {
+      extractedTweetCount += 1;
+    }
     if (!legacy || !isTargetTimelinePost(legacy, user, cutoffTime, includeRetweets)) {
       continue;
     }
@@ -570,9 +575,9 @@ export async function fetchXProfileSnapshot(source: XProfileSource): Promise<Lis
   }
 
   const sortedItems = sortByTimestampDesc(items).slice(0, maxItems);
-  if (sortedItems.length === 0) {
+  if (sortedItems.length === 0 && extractedTweetCount === 0) {
     throw new Error(
-      `X profile monitor found no parent posts: screenName=${source.screenName} maxAgeHours=${maxAgeHours}`
+      `X profile monitor found no timeline posts: screenName=${source.screenName} maxAgeHours=${maxAgeHours}`
     );
   }
 

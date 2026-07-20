@@ -325,6 +325,15 @@ async function runListSource(
 ): Promise<SourceRunResult> {
   const latestItem = items[0];
   if (!latestItem) {
+    if (source.type === "x_profile_poll") {
+      logger.info(`list snapshot: key=${source.key} items=0 latest=(none)`);
+      return {
+        key: source.key,
+        ok: true,
+        changed: false,
+        message: "条件に合う直近の X profile 投稿はありません"
+      };
+    }
     throw new Error("監視結果に item がありません");
   }
 

@@ -222,6 +222,34 @@ describe("runSource", () => {
     });
   });
 
+  it("X profile source の空 snapshot は休眠扱いで成功にする", async () => {
+    vi.mocked(fetchXProfileSnapshot).mockResolvedValue({
+      kind: "list",
+      items: []
+    });
+    const state: MonitorState = {
+      sources: {
+        "x-profile": {
+          lastSeenItemId: "https://x.com/example/status/1",
+          seenItemIds: ["https://x.com/example/status/1"]
+        }
+      }
+    };
+
+    const result = await runSource(xProfileSource, state);
+
+    expect(result).toMatchObject({
+      ok: true,
+      changed: false,
+      message: "条件に合う直近の X profile 投稿はありません"
+    });
+    expect(notifyDiscord).not.toHaveBeenCalled();
+    expect(state.sources["x-profile"]).toEqual({
+      lastSeenItemId: "https://x.com/example/status/1",
+      seenItemIds: ["https://x.com/example/status/1"]
+    });
+  });
+
   it("list source は既読 item の間に挟まった未読 item の通知失敗時に既読化しない", async () => {
     vi.mocked(fetchRssSnapshot).mockResolvedValue({
       kind: "list",

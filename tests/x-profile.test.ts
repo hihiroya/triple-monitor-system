@@ -318,15 +318,32 @@ describe("fetchXProfileSnapshot", () => {
     expect(snapshot.items[0]?.title).toContain("note tweet text");
   });
 
-  it("親ポストが見つからない場合は失敗する", async () => {
+  it("親ポストが期間内に見つからない場合は空の snapshot を返す", async () => {
     vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
     vi.useFakeTimers();
     vi.stubEnv("TWITTER_AUTH_TOKEN", "auth-token");
     vi.stubEnv("X_GQL_USER_TWEETS", "test-query/UserTweets");
     stubFetchTimeline([tweetEntry("reply", { in_reply_to_status_id_str: "parent" })]);
 
+    await expect(fetchXProfileSnapshot(source)).resolves.toEqual({ kind: "list", items: [] });
+  });
+
+  it("timeline post を抽出できない場合は失敗する", async () => {
+    vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
+    vi.useFakeTimers();
+    vi.stubEnv("TWITTER_AUTH_TOKEN", "auth-token");
+    vi.stubEnv("X_GQL_USER_TWEETS", "test-query/UserTweets");
+    stubFetchTimeline([
+      {
+        entryId: "cursor",
+        content: {
+          cursorType: "Top"
+        }
+      }
+    ]);
+
     await expect(fetchXProfileSnapshot(source)).rejects.toThrow(
-      "X profile monitor found no parent posts"
+      "X profile monitor found no timeline posts"
     );
   });
 });
