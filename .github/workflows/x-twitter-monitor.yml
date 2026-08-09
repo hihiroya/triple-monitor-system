@@ -20,7 +20,7 @@ jobs:
       # X/Twitter の RSS は Actions runner 内だけで使う RSSHub に委譲する。
       # TWITTER_AUTH_TOKEN は workflow 全体へ広げず、RSSHub と事前チェックだけに渡す。
       rsshub:
-        image: ghcr.io/diygod/rsshub:2026-07-05@sha256:cc8b5879df94cb8ed792988148efd8b7be1ab4d3359e929dcabe7d66b177f827
+        image: ghcr.io/diygod/rsshub:latest
         ports:
           - 1200:1200
         env:
