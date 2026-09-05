@@ -199,6 +199,36 @@ describe("fetchXProfileSnapshot", () => {
     expect(fetchMock).toHaveBeenCalledTimes(2);
   });
 
+  it("畳まれた Set-Cookie ヘッダから ct0 を取り込む", async () => {
+    vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
+    vi.useFakeTimers();
+    vi.stubEnv("TWITTER_AUTH_TOKEN", "auth-token");
+    vi.stubEnv("X_GQL_USER_TWEETS", "test-query/UserTweets");
+    const fetchMock: FetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(
+        new Response("", {
+          status: 200,
+          headers: {
+            "set-cookie":
+              "guest_id=v1%3A123; Expires=Wed, 21 Oct 2026 07:28:00 GMT; Path=/; Secure, ct0=csrf-token; Path=/; Secure"
+          }
+        })
+      )
+      .mockResolvedValueOnce(userResponse())
+      .mockResolvedValueOnce(timelineResponse([tweetEntry("parent")]));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const snapshot = await fetchXProfileSnapshot(source);
+
+    expect(snapshot.items[0]?.id).toBe("https://x.com/revuestarlight/status/parent");
+    const userRequestInit = fetchMock.mock.calls[1]?.[1];
+    expect(userRequestInit?.headers).toMatchObject({
+      Cookie: expect.stringContaining("ct0=csrf-token"),
+      "x-csrf-token": "csrf-token"
+    });
+  });
+
   it("404 時に X の script から GraphQL endpoint を解決して再試行する", async () => {
     vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
     vi.useFakeTimers();

@@ -115,12 +115,41 @@ function getSetCookieHeaders(headers: Headers): string[] {
     return setCookies;
   }
   const value = headers.get("set-cookie");
-  return value ? [value] : [];
+  return value ? splitCombinedSetCookieHeader(value) : [];
+}
+
+function splitCombinedSetCookieHeader(header: string): string[] {
+  const result: string[] = [];
+  let start = 0;
+  let inExpires = false;
+  for (let index = 0; index < header.length; index += 1) {
+    const char = header[index];
+    if (char === ";") {
+      inExpires = false;
+      continue;
+    }
+    if (!inExpires && header.slice(index, index + 8).toLowerCase() === "expires=") {
+      inExpires = true;
+      index += 7;
+      continue;
+    }
+    if (char !== "," || inExpires) {
+      continue;
+    }
+
+    const rest = header.slice(index + 1);
+    if (/^\s*[!#$%&'*+\-.^_`|~0-9A-Za-z]+=/.test(rest)) {
+      result.push(header.slice(start, index).trim());
+      start = index + 1;
+    }
+  }
+  result.push(header.slice(start).trim());
+  return result.filter(Boolean);
 }
 
 function mergeSetCookies(cookie: string, setCookieHeaders: string[]): string {
   const cookies = parseCookieHeader(cookie);
-  for (const setCookie of setCookieHeaders) {
+  for (const setCookie of setCookieHeaders.flatMap(splitCombinedSetCookieHeader)) {
     const firstPart = setCookie.split(";")[0];
     if (!firstPart) {
       continue;
