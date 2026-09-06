@@ -223,10 +223,16 @@ describe("fetchXProfileSnapshot", () => {
 
     expect(snapshot.items[0]?.id).toBe("https://x.com/revuestarlight/status/parent");
     const userRequestInit = fetchMock.mock.calls[1]?.[1];
-    expect(userRequestInit?.headers).toMatchObject({
-      Cookie: expect.stringContaining("ct0=csrf-token"),
-      "x-csrf-token": "csrf-token"
-    });
+    const userRequestHeaders = userRequestInit?.headers;
+    if (
+      !userRequestHeaders ||
+      userRequestHeaders instanceof Headers ||
+      Array.isArray(userRequestHeaders)
+    ) {
+      throw new Error("user request headers are not a record");
+    }
+    expect(userRequestHeaders.Cookie).toContain("ct0=csrf-token");
+    expect(userRequestHeaders["x-csrf-token"]).toBe("csrf-token");
   });
 
   it("404 時に X の script から GraphQL endpoint を解決して再試行する", async () => {

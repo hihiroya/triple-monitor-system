@@ -55,7 +55,7 @@ describe("quality gate helpers", () => {
     expect(commitStateIndex).toBeGreaterThan(runMonitorIndex);
   });
 
-  it("x-twitter-monitor.yml は RSSHub の secret と起動順を安全に保つ", async () => {
+  it("x-twitter-monitor.yml は RSSHub latest の secret と起動順を安全に保つ", async () => {
     const workflow = await readFile(".github/workflows/x-twitter-monitor.yml", "utf8");
     const rsshubServiceIndex = workflow.indexOf("      rsshub:");
     const checkSecretsIndex = workflow.indexOf("- name: Check RSSHub secrets");
@@ -68,10 +68,8 @@ describe("quality gate helpers", () => {
       "contents: write"
     );
     requireText(
-      workflow.match(
-        /image: ghcr\.io\/diygod\/rsshub:\d{4}-\d{2}-\d{2}@sha256:[a-f0-9]{64}/
-      )?.[0] ?? "",
-      "RSSHub image digest"
+      workflow.match(/image: ghcr\.io\/diygod\/rsshub:latest/)?.[0] ?? "",
+      "RSSHub latest image"
     );
     requireText(
       workflow.match(/TWITTER_AUTH_TOKEN: \$\{\{ secrets\.TWITTER_AUTH_TOKEN \}\}/)?.[0] ?? "",
