@@ -117,6 +117,66 @@ function stubFetchTimeline(entries: unknown[]): FetchMock {
 }
 
 describe("fetchXProfileSnapshot", () => {
+  function stubSplitTimeline(reposts: Response): FetchMock {
+    vi.setSystemTime(new Date("2026-04-21T12:00:00.000Z"));
+    vi.useFakeTimers();
+    vi.stubEnv("TWITTER_AUTH_TOKEN", "auth_token=auth-token; ct0=csrf-token");
+    vi.stubEnv("X_GQL_USER_TWEETS", "old-query/UserTweets");
+    const mock = vi.fn<typeof fetch>().mockImplementation((input) => {
+      const url = typeof input === "string" ? input : input instanceof URL ? input.href : input.url;
+      if (url.includes("/UserByScreenName?")) return Promise.resolve(userResponse());
+      if (url.includes("/UserOriginalsTimeline?")) {
+        return Promise.resolve(
+          timelineResponse([
+            tweetEntry("original", { created_at: "Tue Apr 21 09:00:00 +0000 2026" })
+          ])
+        );
+      }
+      if (url.includes("/UserRepostsTimeline?")) return Promise.resolve(reposts);
+      return Promise.resolve(new Response("", { status: 404 }));
+    });
+    vi.stubGlobal("fetch", mock);
+    return mock;
+  }
+
+  it("旧APIが404なら本人投稿とリポストを統合してから件数制限する", async () => {
+    stubSplitTimeline(
+      timelineResponse([
+        tweetEntry("repost", {
+          retweeted_status_result: {
+            result: tweetResult("old-original", {
+              user_id_str: "other-user",
+              created_at: "Fri Apr 17 10:00:00 +0000 2026"
+            })
+          }
+        }),
+        tweetEntry("original", { created_at: "Tue Apr 21 09:00:00 +0000 2026" })
+      ])
+    );
+    const result = await fetchXProfileSnapshot({ ...source, includeRetweets: true, maxItems: 1 });
+    expect(result.items.map((item) => item.id)).toEqual([
+      "https://x.com/revuestarlight/status/repost"
+    ]);
+    expect(result.items[0]?.timestamp).toBe("2026-04-21T10:00:00.000Z");
+  });
+
+  it("必要なリポスト取得が失敗したら本人投稿だけで成功扱いにしない", async () => {
+    stubSplitTimeline(new Response("", { status: 403 }));
+    await expect(fetchXProfileSnapshot({ ...source, includeRetweets: true })).rejects.toThrow(
+      "status=403"
+    );
+  });
+
+  it("リポスト不要なら専用APIを呼ばない", async () => {
+    const mock = stubSplitTimeline(new Response("", { status: 403 }));
+    await expect(fetchXProfileSnapshot(source)).resolves.toMatchObject({ kind: "list" });
+    expect(
+      mock.mock.calls.some(
+        ([url]) => typeof url === "string" && url.includes("/UserRepostsTimeline?")
+      )
+    ).toBe(false);
+  });
+
   afterEach(() => {
     vi.useRealTimers();
     vi.unstubAllEnvs();

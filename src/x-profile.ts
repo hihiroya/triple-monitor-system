@@ -13,7 +13,9 @@ const MAX_DYNAMIC_ENDPOINT_CANDIDATES = 5;
 const GQL_OPERATION_NAMES = {
   userByScreenName: "UserByScreenName",
   userTweets: "UserTweets",
-  userTweetsAndReplies: "UserTweetsAndReplies"
+  userTweetsAndReplies: "UserTweetsAndReplies",
+  userOriginals: "UserOriginalsTimeline",
+  userReposts: "UserRepostsTimeline"
 } as const;
 type GqlOperationKey = keyof typeof GQL_OPERATION_NAMES;
 
@@ -23,6 +25,10 @@ function getConfiguredEndpoint(operationName: GqlOperationKey): string | undefin
       return process.env.X_GQL_USER_BY_SCREEN_NAME ?? "IGgvgiOx4QZndDHuD3x9TQ/UserByScreenName";
     case "userTweets":
       return process.env.X_GQL_USER_TWEETS;
+    case "userOriginals":
+      return process.env.X_GQL_USER_ORIGINALS || "F3G579cN5xm0xa_j76q08Q/UserOriginalsTimeline";
+    case "userReposts":
+      return process.env.X_GQL_USER_REPOSTS || "bV_DHAIvQ945LAA1-eIIow/UserRepostsTimeline";
     case "userTweetsAndReplies":
       return (
         process.env.X_GQL_USER_TWEETS_AND_REPLIES ?? "Yt1JzwcBsBWYEEi3jMTe2Q/UserTweetsAndReplies"
@@ -68,6 +74,48 @@ const TIMELINE_FEATURES = {
   rweb_video_timestamps_enabled: true,
   longform_notetweets_rich_text_read_enabled: true,
   longform_notetweets_inline_media_enabled: true,
+  responsive_web_enhance_cards_enabled: false
+};
+
+// Feature flags observed in the successful X web client timeline requests.
+const SPLIT_TIMELINE_FEATURES = {
+  rweb_video_screen_enabled: false,
+  rweb_cashtags_enabled: true,
+  profile_label_improvements_pcf_label_in_post_enabled: true,
+  responsive_web_profile_redirect_enabled: true,
+  rweb_tipjar_consumption_enabled: false,
+  verified_phone_label_enabled: false,
+  creator_subscriptions_tweet_preview_api_enabled: true,
+  responsive_web_graphql_timeline_navigation_enabled: true,
+  premium_content_api_read_enabled: false,
+  communities_web_enable_tweet_community_results_fetch: true,
+  c9s_tweet_anatomy_moderator_badge_enabled: true,
+  responsive_web_grok_analyze_button_fetch_trends_enabled: false,
+  responsive_web_grok_analyze_post_followups_enabled: true,
+  rweb_cashtags_composer_attachment_enabled: true,
+  responsive_web_jetfuel_frame: true,
+  responsive_web_grok_share_attachment_enabled: true,
+  responsive_web_grok_annotations_enabled: true,
+  articles_preview_enabled: true,
+  responsive_web_edit_tweet_api_enabled: true,
+  rweb_conversational_replies_downvote_enabled: false,
+  graphql_is_translatable_rweb_tweet_is_translatable_enabled: true,
+  view_counts_everywhere_api_enabled: true,
+  longform_notetweets_consumption_enabled: true,
+  responsive_web_twitter_article_tweet_consumption_enabled: true,
+  content_disclosure_indicator_enabled: true,
+  content_disclosure_ai_generated_indicator_enabled: true,
+  responsive_web_grok_show_grok_translated_post: true,
+  responsive_web_grok_analysis_button_from_backend: true,
+  post_ctas_fetch_enabled: false,
+  freedom_of_speech_not_reach_fetch_enabled: true,
+  standardized_nudges_misinfo: true,
+  tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled: true,
+  longform_notetweets_rich_text_read_enabled: true,
+  longform_notetweets_inline_media_enabled: false,
+  responsive_web_grok_image_annotation_enabled: true,
+  responsive_web_grok_imagine_annotation_enabled: true,
+  responsive_web_grok_community_note_auto_translation_is_enabled: true,
   responsive_web_enhance_cards_enabled: false
 };
 
@@ -572,12 +620,57 @@ export async function fetchXProfileSnapshot(source: XProfileSource): Promise<Lis
     if (!isXWebApiNotFound(error)) {
       throw error;
     }
-    timelineResponse = await fetchXJsonWithEndpointFallback(
-      "userTweetsAndReplies",
-      timelineParams,
-      auth,
-      source.screenName
-    );
+    try {
+      timelineResponse = await fetchXJsonWithEndpointFallback(
+        "userTweetsAndReplies",
+        timelineParams,
+        auth,
+        source.screenName
+      );
+    } catch (fallbackError) {
+      if (!isXWebApiNotFound(fallbackError)) {
+        throw fallbackError;
+      }
+      // X now exposes separate originals and reposts timelines. Do not return
+      // a partial snapshot if either required request fails.
+      const originals = await fetchXJsonWithEndpointFallback(
+        "userOriginals",
+        { ...timelineParams, features: SPLIT_TIMELINE_FEATURES },
+        auth,
+        source.screenName
+      );
+      const timelines = [originals];
+      if (includeRetweets) {
+        timelines.push(
+          await fetchXJsonWithEndpointFallback(
+            "userReposts",
+            { ...timelineParams, features: SPLIT_TIMELINE_FEATURES },
+            auth,
+            source.screenName
+          )
+        );
+      }
+      for (const timeline of timelines) {
+        if (extractInstructions(timeline).length === 0) {
+          throw new Error("X profile monitor received an invalid split timeline", {
+            cause: fallbackError
+          });
+        }
+      }
+      timelineResponse = {
+        data: {
+          user: {
+            result: {
+              timeline: {
+                timeline: {
+                  instructions: timelines.flatMap(extractInstructions)
+                }
+              }
+            }
+          }
+        }
+      };
+    }
   }
 
   const seen = new Set<string>();
@@ -597,9 +690,6 @@ export async function fetchXProfileSnapshot(source: XProfileSource): Promise<Lis
     if (!seen.has(item.id)) {
       seen.add(item.id);
       items.push(item);
-    }
-    if (items.length >= maxItems) {
-      break;
     }
   }
 
