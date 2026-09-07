@@ -50,9 +50,7 @@ export type SelectorStrategyName =
   | "nmri_mail_news_list";
 
 export type PaginationStrategyName =
-  | "walkerplus_event_list_pages"
-  | "enjoytokyo_event_list_pages"
-  | "artscape_exhibition_list_pages";
+  "walkerplus_event_list_pages" | "enjoytokyo_event_list_pages" | "artscape_exhibition_list_pages";
 
 export interface HtmlPaginationConfig {
   strategy: PaginationStrategyName;
@@ -68,11 +66,7 @@ export interface PublicHtmlListSource extends BaseSource {
 }
 
 export type MonitorSource =
-  | RssSource
-  | XProfileSource
-  | NotionPageSource
-  | NotionDatabaseSource
-  | PublicHtmlListSource;
+  RssSource | XProfileSource | NotionPageSource | NotionDatabaseSource | PublicHtmlListSource;
 
 export interface MonitorItem {
   id: string;
