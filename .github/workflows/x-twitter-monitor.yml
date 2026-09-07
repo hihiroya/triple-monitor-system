@@ -16,17 +16,6 @@ jobs:
   monitor:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    services:
-      # X/Twitter の RSS は Actions runner 内だけで使う RSSHub に委譲する。
-      # TWITTER_AUTH_TOKEN は workflow 全体へ広げず、RSSHub と事前チェックだけに渡す。
-      rsshub:
-        image: ghcr.io/diygod/rsshub:latest
-        ports:
-          - 1200:1200
-        env:
-          CACHE_TYPE: memory
-          REQUEST_TIMEOUT: "10000"
-          TWITTER_AUTH_TOKEN: ${{ secrets.TWITTER_AUTH_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -48,21 +37,17 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Check RSSHub secrets
+      # service は steps より先に起動するため、Cookie を正規化してから明示的に起動する。
+      - name: Start RSSHub
         env:
           TWITTER_AUTH_TOKEN: ${{ secrets.TWITTER_AUTH_TOKEN }}
-        run: |
-          # RSSHub は secret が空でも起動できるため、監視前に明示的に止めて原因をログに残す。
-          if [ -z "${TWITTER_AUTH_TOKEN}" ]; then
-            echo "TWITTER_AUTH_TOKEN secret is required for X/Twitter RSSHub routes."
-            exit 1
-          fi
+        run: node dist/rsshub.js
 
       - name: Wait for RSSHub
         run: |
           # Docker service の起動直後は HTTP を受けられないことがあるため、短く再試行する。
           for attempt in {1..30}; do
-            if curl --fail --silent --show-error "http://127.0.0.1:1200/" > /dev/null; then
+            if curl --fail --silent --show-error --connect-timeout 2 --max-time 5 "http://127.0.0.1:1200/" > /dev/null; then
               echo "RSSHub is ready."
               exit 0
             fi
@@ -87,3 +72,7 @@ jobs:
         with:
           commit-message: Update X Twitter monitor state
           state-path: state/default-state.json
+
+      - name: Stop RSSHub
+        if: always()
+        run: docker rm --force x-twitter-rsshub 2>/dev/null || true

@@ -57,8 +57,8 @@ describe("quality gate helpers", () => {
 
   it("x-twitter-monitor.yml は RSSHub latest の secret と起動順を安全に保つ", async () => {
     const workflow = await readFile(".github/workflows/x-twitter-monitor.yml", "utf8");
-    const rsshubServiceIndex = workflow.indexOf("      rsshub:");
-    const checkSecretsIndex = workflow.indexOf("- name: Check RSSHub secrets");
+    const buildIndex = workflow.indexOf("- name: Build");
+    const checkSecretsIndex = workflow.indexOf("- name: Start RSSHub");
     const waitRssHubIndex = workflow.indexOf("- name: Wait for RSSHub");
     const runMonitorIndex = workflow.indexOf("- name: Run X/Twitter monitor");
     const commitStateIndex = workflow.indexOf("- name: Commit state");
@@ -68,8 +68,8 @@ describe("quality gate helpers", () => {
       "contents: write"
     );
     requireText(
-      workflow.match(/image: ghcr\.io\/diygod\/rsshub:latest/)?.[0] ?? "",
-      "RSSHub latest image"
+      workflow.match(/node dist\/rsshub\.js/)?.[0] ?? "",
+      "RSSHub startup with normalized credentials"
     );
     requireText(
       workflow.match(/TWITTER_AUTH_TOKEN: \$\{\{ secrets\.TWITTER_AUTH_TOKEN \}\}/)?.[0] ?? "",
@@ -77,8 +77,9 @@ describe("quality gate helpers", () => {
     );
     requireText(workflow.match(/npm run monitor:x-twitter/)?.[0] ?? "", "X/Twitter script");
 
-    expect(rsshubServiceIndex).toBeGreaterThan(-1);
-    expect(checkSecretsIndex).toBeGreaterThan(rsshubServiceIndex);
+    expect(workflow).not.toContain("services:");
+    expect(buildIndex).toBeGreaterThan(-1);
+    expect(checkSecretsIndex).toBeGreaterThan(buildIndex);
     expect(waitRssHubIndex).toBeGreaterThan(checkSecretsIndex);
     expect(runMonitorIndex).toBeGreaterThan(waitRssHubIndex);
     expect(commitStateIndex).toBeGreaterThan(runMonitorIndex);

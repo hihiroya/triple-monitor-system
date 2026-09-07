@@ -28,12 +28,22 @@ flowchart TD
 確認順:
 
 1. `TWITTER_AUTH_TOKEN` が GitHub Secrets に登録されているか。
-2. `x-twitter-monitor.yml` の RSSHub service が起動しているか。
+2. `x-twitter-monitor.yml` の `Start RSSHub` step が成功しているか。
 3. `Wait for RSSHub` step が成功しているか。
 4. RSSHub image digest が古くないか。
 5. 対象 route が RSSHub 側でまだ利用できるか。
 
 X/Twitter RSS は RSSHub の route 実装に依存します。取得漏れや空 feed が続く場合は、RSSHub と対象サービス側の仕様変更を確認してください。
+
+`TWITTER_AUTH_TOKEN` はトークン値だけ、または `auth_token=…; ct0=…` の Cookie 形式を指定できます。
+X Profile Monitor は Cookie をそのまま使用し、X Twitter Monitor は `Start RSSHub` で
+`auth_token` の値だけを抽出して RSSHub に渡します。Secret を用途別に変更する必要はありません。
+空値や `auth_token` のない Cookie はコンテナ起動前に拒否します。
+
+2026-09-06 の障害では、共有 Secret を Cookie 形式に変更したことで、RSSHub が Cookie 全体を
+トークン値として扱い、X API が 403 を返しました。その後 RSSHub がトークンを除外したため、
+次の source では `Twitter cookie for token undefined is not valid` になりました。
+このメッセージは Secret 未設定を意味するとは限りません。先行するエラーを確認してください。
 
 ## 公開 HTML だけ失敗する
 
