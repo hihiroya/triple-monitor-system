@@ -28,3 +28,27 @@ Tourism run [37324667308](https://github.com/hihiroya/triple-monitor-system/acti
 ## 検証
 
 実通信なしで、1件目成功後・2件目失敗、初回通知失敗、チェックポイント保存失敗による後続通知停止、version通知の保存を確認する。compiled CLIと同じrunnerを子プロセスで起動し、2件目の通信中に強制終了して、ディスクに1件目だけが残り未通知2件目は既読にならないことを確認する。通知履歴の確認・運用中状態の復旧は未実施。
+
+## #50との一時ブランチ統合検証
+
+#51の723a240a2818bcb35917fd466a726c7752619167と#50のed1ff357f299c8f0dcd46504f775aca6c7ecb563を一時ブランチで統合し、競合なし・追加の実装修正不要を確認した。[検証コード](https://github.com/hihiroya/triple-monitor-system/blob/7d60a532cf0930078c318da2abcd0dfb21374a08/tests/checkpoints-state-branch.integration.test.ts)は運用mainとは別のブランチに保存した。
+
+Node 24.19.0 / npm 11.15.0でnpm run check成功（18ファイル・162テスト、型検査・ビルド・設定検証・lint・knip・coverage・整形）。一時bare remoteを使い、実通知なしで以下を確認した。
+
+- 1件目成功後、2件目を開始する前にcheckpoint JSONが保存済み。後続通知が失敗しrunMainがexitCode=1でも、Actionと同じcompiled save CLIを実行して1件目だけをmonitor-stateへ保存できる。mainと他の状態ファイルは不変。
+- 実際のrename失敗を発生させ、後続通知・後続sourceが停止する。別テストでは以前の正常checkpointを保持し、保存失敗を致命的エラーとして伝播することを確認。
+- remoteのpre-receive hookでpushを拒否し、3回後にsave CLIが失敗する。成功済み状態、取得時baseline、branch/statePath/stateCommit/baseBlob/codeCommitのprovenanceがすべて残る。
+- composite Actionの失敗時条件、hidden filesを含む設定、欠落時エラー、30日保持を確認し、実際のpath入力3ファイルをローカルartifact捕捉先へコピーして内容を照合。未通知2件目は既読にならない。
+
+GitHub Actionsでの本物のartifactアップロード・ダウンロード、GITHUB_TOKENによる状態push、キャンセル時のAction実行・runner消失時の回収は未検証。ローカル入力捕捉を実アップロード成功として扱わない。通知成功とファイル保存の間に停止する短い窓も残る。過去の既読状態・通知履歴の復旧、実通知、workflow設定変更、PRマージ、状態移行、#49有効化は実施しない。
+
+## 別修正候補: 通信期限と429の待機予算
+
+このPRでは通信・再試行の挙動を変更しない。次の値は別PRで検証する初期案であり、10月5日の原因を示すものではない。
+
+1. 本文読み取りまで含む1要求20秒の期限: fetchWithTimeoutでResponseだけを返す方式から、Response消費callbackを期限内でawaitする共通処理にする。headers取得、text/json、エラー本文の読み取りまでAbortControllerを維持する。期限超過でstreamを停止し、未使用本文もcancelする。上位の停止signalも合成する。
+2. Discordの1通知に総時間90秒、429は従来どおり最大3試行、1回の待機許容量30秒を設ける。Retry-Afterが待機許容量・残り予算を超える場合は今回を失敗にし、指定時間より早く再送しない。各要求期限を残り予算以下にし、単調時計で期限を計算する。テストoverrideも同じ予算内に制限する。
+3. HTTP成功応答の喪失・通信timeoutを自動再送する範囲は広げない。通知の成否が不明な通信障害で重複送信しない。未確認の通知を既読にはしない。
+4. source key、試行番号、HTTP status、経過時間、採用した待機時間、期限超過を秘密情報なしで記録する。停止した本文stream、数値/日付形式のRetry-After、巨大値・不正値、3試行の上限、総時間切れをfake timersとローカルHTTP fixtureで検証する。
+
+これらは1要求・1通知の期限であり、複数通知を合計した全jobの10分上限を保証するものではない。必要なら別途run全体の通知予算も設計し、期限到達前に今回のcheckpointを保存して終了させる。
