@@ -72,7 +72,7 @@ export async function runMain(args = process.argv.slice(2)): Promise<void> {
   // 外部サイトや API に負荷をかけず、ログの原因追跡もしやすくするため直列で処理する。
   for (const source of sources) {
     logger.info(`source 開始: key=${source.key} type=${source.type}`);
-    const result = await runSource(source, state);
+    const result = await runSource(source, state, saveState);
     hasStateChange = hasStateChange || result.changed;
 
     if (!result.ok) {
