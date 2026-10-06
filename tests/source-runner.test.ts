@@ -193,8 +193,8 @@ describe("runSource", () => {
     expect(notifyDiscord).toHaveBeenCalledTimes(1);
     expect(vi.mocked(notifyDiscord).mock.calls[0]?.[1]).toMatchObject({ id: "n" });
     expect(state.sources["rss-main"]).toEqual({
-      lastSeenItemId: "a",
-      seenItemIds: ["a", "n", "b", "c"]
+      lastSeenItemId: "n",
+      seenItemIds: ["n", "a", "b", "c"]
     });
   });
 
@@ -218,7 +218,92 @@ describe("runSource", () => {
     expect(notifyDiscord).not.toHaveBeenCalled();
     expect(state.sources["rss-main"]).toEqual({
       lastSeenItemId: "known-newest",
-      seenItemIds: ["known-newest", "known-middle", "known-oldest", "older"]
+      seenItemIds: ["known-newest", "known-middle", "known-oldest"]
+    });
+  });
+
+  it.each([rssSource, publicHtmlSource, xProfileSource])(
+    "$type の正常終了でも未通知の古い項目を追加せず、最後の通知成功位置を保持する",
+    async (source) => {
+      const snapshot = {
+        kind: "list" as const,
+        items: [item("known"), item("new"), item("boundary"), item("unnotified")]
+      };
+      vi.mocked(fetchRssSnapshot).mockResolvedValue(snapshot);
+      vi.mocked(fetchPublicHtmlSnapshot).mockResolvedValue(snapshot);
+      vi.mocked(fetchXProfileSnapshot).mockResolvedValue(snapshot);
+      vi.mocked(notifyDiscord).mockResolvedValue(undefined);
+      const state: MonitorState = {
+        sources: {
+          [source.key]: {
+            lastSeenItemId: "known",
+            seenItemIds: ["known", "boundary", "outside-snapshot"]
+          }
+        }
+      };
+      const checkpoints: MonitorState[] = [];
+      const result = await runSource(source, state, (saved) => {
+        checkpoints.push(structuredClone(saved));
+        return Promise.resolve();
+      });
+      expect(result).toMatchObject({ ok: true, changed: true });
+      expect(notifyDiscord).toHaveBeenCalledTimes(1);
+      expect(state.sources[source.key]).toEqual({
+        lastSeenItemId: "new",
+        seenItemIds: ["new", "known", "boundary", "outside-snapshot"]
+      });
+      expect(checkpoints).toEqual([state]);
+      // 2回目は通知もcheckpointも発生せず、一覧による状態の上書きもない。
+      expect(await runSource(source, state)).toMatchObject({ ok: true, changed: false });
+      expect(notifyDiscord).toHaveBeenCalledTimes(1);
+      expect(state).toEqual(checkpoints[0]);
+    }
+  );
+
+  it("新着なしでは取得順が変わっても既読位置・旧形式の履歴を変更しない", async () => {
+    vi.mocked(fetchRssSnapshot).mockResolvedValue({
+      kind: "list",
+      items: [item("other-known"), item("last-success"), item("unnotified")]
+    });
+    const state: MonitorState = {
+      sources: {
+        [rssSource.key]: {
+          lastSeenItemId: "last-success",
+          seenItemIds: ["other-known", "outside-snapshot"]
+        }
+      }
+    };
+    const previous = structuredClone(state);
+    const checkpoint = vi.fn();
+    expect(await runSource(rssSource, state, checkpoint)).toMatchObject({
+      ok: true,
+      changed: false
+    });
+    expect(state).toEqual(previous);
+    expect(notifyDiscord).not.toHaveBeenCalled();
+    expect(checkpoint).not.toHaveBeenCalled();
+  });
+
+  it("初回baselineと通知成功後の履歴上限100件を維持する", async () => {
+    const ids = Array.from({ length: 105 }, (_, i) => `old-${i}`);
+    vi.mocked(fetchRssSnapshot).mockResolvedValue({ kind: "list", items: ids.map(item) });
+    const state: MonitorState = { sources: {} };
+    await runSource(rssSource, state);
+    expect(state.sources[rssSource.key]).toEqual({
+      lastSeenItemId: "old-0",
+      seenItemIds: ids.slice(0, 100)
+    });
+    expect(notifyDiscord).not.toHaveBeenCalled();
+    vi.mocked(fetchRssSnapshot).mockResolvedValue({
+      kind: "list",
+      items: [item("new"), ...ids.map(item)]
+    });
+    vi.mocked(notifyDiscord).mockResolvedValue(undefined);
+    await runSource(rssSource, state);
+    expect(notifyDiscord).toHaveBeenCalledTimes(1);
+    expect(state.sources[rssSource.key]).toEqual({
+      lastSeenItemId: "new",
+      seenItemIds: ["new", ...ids.slice(0, 99)]
     });
   });
 
