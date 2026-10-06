@@ -12,14 +12,19 @@ concurrency:
   group: default-monitor-state
   cancel-in-progress: false
 
+env:
+  MONITOR_REQUIRE_STATE: "true"
+
 jobs:
   monitor:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
+          ref: main
           fetch-depth: 0
 
       - name: Setup Node.js
@@ -36,6 +41,17 @@ jobs:
 
       - name: Build
         run: npm run build
+
+      - name: Load runtime state
+        id: state
+        uses: ./.github/actions/load-monitor-state
+        with:
+          state-path: state/default-state.json
+
+      - name: Validate config and runtime state
+        env:
+          MONITOR_STATE_PATH: state/default-state.json
+        run: npm run validate:config
 
       # service は steps より先に起動するため、Cookie を正規化してから明示的に起動する。
       - name: Start RSSHub
@@ -67,9 +83,10 @@ jobs:
         run: npm run monitor:x-twitter
 
       - name: Commit state
-        if: always() && steps.monitor.outcome != 'skipped'
+        if: always() && steps.state.outcome == 'success' && steps.monitor.outcome != 'skipped'
         uses: ./.github/actions/commit-monitor-state
         with:
+          base-blob: ${{ steps.state.outputs.base-blob }}
           commit-message: Update X Twitter monitor state
           state-path: state/default-state.json
 

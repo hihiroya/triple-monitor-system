@@ -7,6 +7,8 @@ coverage/
 !.env.example
 
 state/*.tmp
+.monitor-state-baseline.json
+.monitor-state-recovery.json
 
 npm-debug.log*
 yarn-debug.log*

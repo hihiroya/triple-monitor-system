@@ -90,6 +90,18 @@ describe("main", () => {
     vi.restoreAllMocks();
   });
 
+  it("state 取得失敗では source 実行・通知・保存へ進まない", async () => {
+    const { runMain, loadStateMock, runSourceMock, saveStateMock } = await loadMainWithMocks({
+      sources: [rssSource],
+      state: { sources: {} },
+      results: []
+    });
+    loadStateMock.mockRejectedValueOnce(new Error("Required runtime state unavailable"));
+    await expect(runMain([])).rejects.toThrow("Required runtime state unavailable");
+    expect(runSourceMock).not.toHaveBeenCalled();
+    expect(saveStateMock).not.toHaveBeenCalled();
+  });
+
   it("parseTypeArg は有効な type filter を返す", async () => {
     const { parseGroupArg, parseTypeArg } = await loadMainWithMocks({
       sources: [],

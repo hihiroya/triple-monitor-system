@@ -1,0 +1,21 @@
+name: Load monitor state
+description: Read required runtime JSON from monitor-state without checking out branch code.
+
+inputs:
+  state-path:
+    description: Existing monitor state file path.
+    required: true
+outputs:
+  base-blob:
+    description: Immutable loaded state blob used to reject concurrent same-file changes.
+    value: ${{ steps.load.outputs.base-blob }}
+
+runs:
+  using: composite
+  steps:
+    - name: Load required runtime state
+      id: load
+      shell: bash
+      env:
+        STATE_PATH: ${{ inputs.state-path }}
+      run: node dist/monitor-state-branch.js load "$STATE_PATH"

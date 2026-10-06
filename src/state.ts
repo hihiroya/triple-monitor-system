@@ -21,7 +21,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function validateState(value: unknown): MonitorState {
+export function validateState(value: unknown): MonitorState {
   if (!isRecord(value) || !isRecord(value.sources)) {
     throw new Error("monitor-state.json は { sources: {} } 形式である必要があります");
   }
@@ -53,8 +53,8 @@ function validateState(value: unknown): MonitorState {
 /**
  * monitor-state.json を読み込む。
  *
- * state がまだ存在しない初回実行では空 state を返し、壊れた JSON や不正形式は
- * 監視の安全性を優先して失敗させる。
+ * ローカル初回実行では空 state を許可する。本番 workflow と設定検証では
+ * MONITOR_REQUIRE_STATE=true で欠落も失敗させ、空状態で再通知しない。
  */
 export async function loadState(): Promise<MonitorState> {
   const statePath = getStatePath();
@@ -62,7 +62,12 @@ export async function loadState(): Promise<MonitorState> {
     const raw = await readFile(statePath, "utf8");
     return validateState(JSON.parse(raw) as unknown);
   } catch (error) {
-    if (error instanceof Error && "code" in error && error.code === "ENOENT") {
+    if (
+      process.env.MONITOR_REQUIRE_STATE !== "true" &&
+      error instanceof Error &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
       return { sources: {} };
     }
     const message = error instanceof Error ? error.message : String(error);
