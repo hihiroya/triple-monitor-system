@@ -90,7 +90,7 @@ export async function saveState(state: MonitorState): Promise<void> {
   const tempPath = `${statePath}.${process.pid}.${Date.now()}.tmp`;
 
   try {
-    await writeFile(tempPath, body, "utf8");
+    await writeFile(tempPath, body, { encoding: "utf8", flush: true });
     await rename(tempPath, statePath);
   } catch (error) {
     await rm(tempPath, { force: true }).catch(() => undefined);

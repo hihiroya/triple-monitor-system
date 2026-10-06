@@ -15,6 +15,27 @@ import { asErrorMessage } from "./utils.js";
 
 const SEEN_ITEM_HISTORY_LIMIT = 100;
 
+type StateCheckpoint = (state: MonitorState) => Promise<void>;
+
+class StateCheckpointError extends Error {}
+
+async function checkpointNotification(
+  source: MonitorSource,
+  state: MonitorState,
+  checkpoint: StateCheckpoint | undefined
+): Promise<void> {
+  if (!checkpoint) return;
+  try {
+    await checkpoint(state);
+  } catch (error) {
+    throw new StateCheckpointError(
+      `通知成功後の状態保存に失敗しました: key=${source.key}: ${asErrorMessage(error)}`,
+      { cause: error }
+    );
+  }
+  logger.info(`通知成功後の状態を保存しました: key=${source.key}`);
+}
+
 function isYoutubeRssSource(source: MonitorSource): boolean {
   if (source.type !== "rss") {
     return false;
@@ -274,7 +295,8 @@ function findNewYoutubeRssItemsAfterGap(
  */
 export async function runSource(
   source: MonitorSource,
-  state: MonitorState
+  state: MonitorState,
+  checkpoint?: StateCheckpoint
 ): Promise<SourceRunResult> {
   try {
     const snapshot = await fetchSnapshot(source);
@@ -286,12 +308,14 @@ export async function runSource(
         state,
         snapshot.items,
         sourceState.lastSeenItemId,
-        sourceState.seenItemIds
+        sourceState.seenItemIds,
+        checkpoint
       );
     }
 
-    return await runVersionSource(source, state, snapshot, sourceState.lastSeenVersion);
+    return await runVersionSource(source, state, snapshot, sourceState.lastSeenVersion, checkpoint);
   } catch (error) {
+    if (error instanceof StateCheckpointError) throw error;
     if (shouldSkipTransientSourceFailure(source, error)) {
       return {
         key: source.key,
@@ -321,7 +345,8 @@ async function runListSource(
   state: MonitorState,
   items: MonitorItem[],
   lastSeenItemId: string | undefined,
-  seenItemIds: string[] | undefined
+  seenItemIds: string[] | undefined,
+  checkpoint: StateCheckpoint | undefined
 ): Promise<SourceRunResult> {
   const latestItem = items[0];
   if (!latestItem) {
@@ -414,6 +439,7 @@ async function runListSource(
       lastSeenItemId: item.id,
       seenItemIds: currentSeenItemIds
     };
+    await checkpointNotification(source, state, checkpoint);
   }
 
   state.sources[source.key] = {
@@ -440,7 +466,8 @@ async function runVersionSource(
   source: MonitorSource,
   state: MonitorState,
   snapshot: Extract<SourceSnapshot, { kind: "version" }>,
-  lastSeenVersion: string | undefined
+  lastSeenVersion: string | undefined,
+  checkpoint: StateCheckpoint | undefined
 ): Promise<SourceRunResult> {
   if (!lastSeenVersion) {
     // 初回は「どこから監視を始めるか」を記録するだけにして、既存更新の通知を抑制する。
@@ -465,6 +492,7 @@ async function runVersionSource(
   await notifyDiscord(source, buildVersionItem(snapshot));
   // Notion の last_edited_time も通知成功後だけ更新し、失敗時の取りこぼしを避ける。
   state.sources[source.key] = { lastSeenVersion: snapshot.version };
+  await checkpointNotification(source, state, checkpoint);
 
   return {
     key: source.key,

@@ -39,7 +39,11 @@ async function loadMainWithMocks(options: {
     )
   );
   const runSourceMock = vi.fn<
-    (source: MonitorSource, state: MonitorState) => Promise<SourceRunResult>
+    (
+      source: MonitorSource,
+      state: MonitorState,
+      checkpoint?: (state: MonitorState) => Promise<void>
+    ) => Promise<SourceRunResult>
   >(() => {
     const result = options.results.shift();
     if (!result) {
@@ -123,7 +127,7 @@ describe("main", () => {
       ...rssSource,
       group: "standard-rss"
     };
-    const { runMain, loadSourcesMock, runSourceMock } = await loadMainWithMocks({
+    const { runMain, loadSourcesMock, runSourceMock, saveStateMock } = await loadMainWithMocks({
       sources: [groupedRssSource, notionSource],
       state: { sources: {} },
       results: [
@@ -140,6 +144,7 @@ describe("main", () => {
 
     expect(loadSourcesMock).toHaveBeenCalledWith("rss", "standard-rss");
     expect(runSourceMock).toHaveBeenCalledTimes(1);
+    expect(runSourceMock.mock.calls[0]?.[2]).toBe(saveStateMock);
     expect(runSourceMock.mock.calls[0]?.[0]).toMatchObject({ key: "rss-main" });
     expect(process.exitCode).toBeUndefined();
   });
@@ -164,6 +169,16 @@ describe("main", () => {
     expect(saveStateMock).toHaveBeenCalledWith(state);
   });
 
+  it("checkpoint fatal errors stop before the next source", async () => {
+    const { runMain, runSourceMock } = await loadMainWithMocks({
+      sources: [rssSource, notionSource],
+      state: { sources: {} },
+      results: []
+    });
+    runSourceMock.mockRejectedValueOnce(new Error("checkpoint failed"));
+    await expect(runMain([])).rejects.toThrow("checkpoint failed");
+    expect(runSourceMock).toHaveBeenCalledTimes(1);
+  });
   it("部分失敗時も他 source を継続し、最後に exitCode=1 にする", async () => {
     const { runMain, runSourceMock, loggerMock } = await loadMainWithMocks({
       sources: [rssSource, notionSource],
