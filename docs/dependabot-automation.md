@@ -33,6 +33,16 @@ APIからimmutable SHAのmanifestとlockfileをJSONデータとして読み、�
 
 既存Quality Checkのaudit、ignore-scripts、npm 11.15.0、.npmrcのインストール元制限を変更しない。
 
+## 保護設定を有効化する前提
+
+[PR #50](https://github.com/hihiroya/triple-monitor-system/pull/50)の監視状態分離と運用移行を先に完了する。現行の監視workflowはmainへ状態を直接pushするため、状態保存のためにmain保護をbypassする設定を追加しない。
+
+別途承認された移行作業で、6監視workflowを停止して旧runを終了させ、#50を反映してmainのQuality Checkを確認する。その後Initialize monitor stateをmainから実行し、移行時点の最新状態をmonitor-stateへ引き継ぎ、監視再開後に専用ブランチへの保存とmainへの状態push停止を確認する。初期化前に監視を再開しない。
+
+[状態分離・移行・障害回復の設計](https://github.com/hihiroya/triple-monitor-system/blob/chore/isolate-monitor-state-20261006/docs/monitor-state-branch.md)を参照する。状態取得失敗は監視前に停止し、保存失敗はartifactを回復してから再開する。今回のPR更新では状態ブランチ作成、稼働先切替、保護設定変更、マージは行っていない。
+
+mainの保護を有効にするのは上記確認の後とし、rulesetの対象をmainだけに限定する。monitor-stateの更新にmainのPR・quality要件やbypassを流用しない。
+
 ## 必要なリポジトリ設定（このPRでは変更しない）
 
 2026-10-06の読み取り確認結果：Allow auto-mergeは無効、squash mergeは有効。ruleset一覧とmainの有効ルール一覧は空。mainのclassic branch protectionは404（未設定）。実際のQuality Check jobのチェック名は`quality`、提供AppはGitHub Actions（App ID 15368）。workflow表示名`Quality Check`を必須チェック名として登録しない。
