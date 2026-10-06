@@ -1,0 +1,200 @@
+name: Dependabot auto-merge
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions: {}
+
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  auto-merge:
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.base.repo.full_name == github.repository &&
+      github.event.pull_request.base.ref == 'main' &&
+      !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: read
+    steps:
+      # No checkout, npm install, or execution of PR code in this privileged job.
+      - name: Verify Dependabot metadata and signed commits
+        id: metadata
+        # dependabot/fetch-metadata v3.1.0; verified upstream tag/commit.
+        uses: dependabot/fetch-metadata@25dd0e34f4fe68f24cc83900b1fe3fe149efef98
+        with:
+          github-token: ${{ github.token }}
+          skip-verification: false
+          skip-commit-verification: false
+
+      - name: Check every update, changed file, and required CI protection
+        id: eligibility
+        # actions/github-script v8; verified upstream tag/commit.
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd
+        env:
+          DEPENDABOT_UPDATES: ${{ steps.metadata.outputs.updated-dependencies-json }}
+        with:
+          github-token: ${{ github.token }}
+          result-encoding: string
+          script: |
+            const skip = (reason) => { core.info(`Manual review required: ${reason}`); return false; };
+            try {
+              const { owner, repo } = context.repo;
+              const repository = `${owner}/${repo}`;
+              const number = context.payload.pull_request.number;
+              const request = async (route, params = {}) =>
+                (await github.request(route, { owner, repo, ...params })).data;
+              const pr = await request('GET /repos/{owner}/{repo}/pulls/{pull_number}', { pull_number: number });
+              if (pr.state !== 'open' || pr.draft || pr.user.login !== 'dependabot[bot]' ||
+                  pr.head.repo?.full_name !== repository || pr.base.repo?.full_name !== repository ||
+                  pr.base.ref !== 'main' || pr.head.sha !== context.payload.pull_request.head.sha) {
+                return skip('PR identity, repository, base, or head changed');
+              }
+              const updates = JSON.parse(process.env.DEPENDABOT_UPDATES || '[]');
+              const minorPatch = new Set(['version-update:semver-minor', 'version-update:semver-patch']);
+              if (!Array.isArray(updates) || updates.length === 0 || updates.some((update) =>
+                  update.packageEcosystem !== 'npm_and_yarn' || update.directory !== '/' ||
+                  update.targetBranch !== 'main' || update.maintainerChanges ||
+                  !['direct:development', 'indirect'].includes(update.dependencyType) ||
+                  !minorPatch.has(update.updateType))) {
+                return skip('metadata includes a major, production, non-npm, or unknown update');
+              }
+              const files = await github.paginate('GET /repos/{owner}/{repo}/pulls/{pull_number}/files',
+                { owner, repo, pull_number: number, per_page: 100 });
+              if (!files.length || files.length !== pr.changed_files || files.some((file) =>
+                  !['package.json', 'package-lock.json'].includes(file.filename) || file.status !== 'modified') ||
+                  !files.some((file) => file.filename === 'package-lock.json')) {
+                return skip('changed files exceed the existing root npm manifest/lockfile');
+              }
+              // JSON is fetched as data at immutable SHAs, never imported or executed.
+              const comparison = await request('GET /repos/{owner}/{repo}/compare/{basehead}',
+                { basehead: `${pr.base.sha}...${pr.head.sha}` });
+              const baseSha = comparison.merge_base_commit.sha;
+              const readJson = async (path, ref) => {
+                const file = await request('GET /repos/{owner}/{repo}/contents/{path}', { path, ref });
+                if (file.type !== 'file' || file.encoding !== 'base64' || !file.content) {
+                  throw new Error('Missing or oversized JSON file');
+                }
+                return JSON.parse(Buffer.from(file.content, 'base64').toString('utf8'));
+              };
+              const before = await readJson('package.json', baseSha);
+              const after = await readJson('package.json', pr.head.sha);
+              const oldLock = await readJson('package-lock.json', baseSha);
+              const newLock = await readJson('package-lock.json', pr.head.sha);
+              const canonical = (value) => JSON.stringify(value, (_, item) =>
+                item && typeof item === 'object' && !Array.isArray(item)
+                  ? Object.fromEntries(Object.keys(item).sort().map((key) => [key, item[key]])) : item);
+              const without = (value, key) => Object.fromEntries(Object.entries(value).filter(([name]) => name !== key));
+              const version = (value) => {
+                const match = typeof value === 'string' && /^(?:\^|~)?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(value);
+                return match ? match.slice(1).map(Number) : null;
+              };
+              const safeUpgrade = (oldVersion, newVersion) => {
+                const old = version(oldVersion), next = version(newVersion);
+                return old && next && old[0] === next[0] &&
+                  (next[1] > old[1] || (next[1] === old[1] && next[2] >= old[2]));
+              };
+              if (canonical(without(before, 'devDependencies')) !== canonical(without(after, 'devDependencies')) ||
+                  canonical(Object.keys(before.devDependencies || {}).sort()) !==
+                  canonical(Object.keys(after.devDependencies || {}).sort())) {
+                return skip('manifest changes production dependencies, scripts, policy, or dependency membership');
+              }
+              for (const [name, next] of Object.entries(after.devDependencies || {})) {
+                const previous = before.devDependencies[name];
+                if (previous !== next && (!safeUpgrade(previous, next) ||
+                    !updates.some((update) => update.dependencyName === name))) {
+                  return skip('unlisted, major, prerelease, downgrade, or non-registry direct update');
+                }
+              }
+              if (oldLock.lockfileVersion !== 3 || newLock.lockfileVersion !== 3 ||
+                  !oldLock.packages?.[''] || !newLock.packages?.[''] ||
+                  canonical(without(oldLock, 'packages')) !== canonical(without(newLock, 'packages')) ||
+                  canonical(without(oldLock.packages[''], 'devDependencies')) !==
+                  canonical(without(newLock.packages[''], 'devDependencies')) ||
+                  canonical(newLock.packages[''].devDependencies) !== canonical(after.devDependencies)) {
+                return skip('lockfile format or root policy changed');
+              }
+              const changedNames = new Set();
+              for (const path of new Set([...Object.keys(oldLock.packages), ...Object.keys(newLock.packages)])) {
+                if (path === '') continue;
+                const old = oldLock.packages[path], next = newLock.packages[path];
+                if (canonical(old) === canonical(next)) continue;
+                if ((old && old.dev !== true) || (next && next.dev !== true)) {
+                  return skip('a production or shared transitive dependency changed');
+                }
+                if (next && (!/^https:\/\/registry\.npmjs\.org\//.test(next.resolved || '') ||
+                    !/^sha512-/.test(next.integrity || '') || next.link)) {
+                  return skip('a changed dependency has an unapproved install source');
+                }
+                if (old && next && old.version !== next.version && !safeUpgrade(old.version, next.version)) {
+                  return skip('a transitive dependency has a major, prerelease, or downgrade');
+                }
+                if (old && next && old.version !== next.version) {
+                  changedNames.add(path.split('node_modules/').at(-1));
+                }
+              }
+              if (!changedNames.size || updates.some((update) => !changedNames.has(update.dependencyName))) {
+                return skip('metadata does not match the actual lockfile version updates');
+              }
+              const settings = await request('GET /repos/{owner}/{repo}');
+              if (!settings.allow_auto_merge || !settings.allow_squash_merge) {
+                return skip('repository auto-merge/squash settings are not enabled');
+              }
+              // Require strict, app-scoped quality protection before calling gh --auto.
+              // Effective rules include only active rulesets; classic protection is checked separately.
+              const rules = await request('GET /repos/{owner}/{repo}/rules/branches/{branch}', { branch: 'main' });
+              const classic = await github.graphql(`query($owner: String!, $repo: String!) {
+                repository(owner: $owner, name: $repo) {
+                  ref(qualifiedName: "refs/heads/main") { branchProtectionRule {
+                    requiresStatusChecks requiresStrictStatusChecks isAdminEnforced
+                    requiredStatusChecks { context app { databaseId } }
+                  } }
+                }
+              }`, { owner, repo });
+              const protection = classic.repository.ref?.branchProtectionRule;
+              const classicStrict = protection?.requiresStatusChecks && protection.requiresStrictStatusChecks && protection.isAdminEnforced &&
+                protection.requiredStatusChecks?.some((check) => check.context === 'quality' && check.app?.databaseId === 15368);
+              const strictRules = rules.filter((rule) => rule.type === 'required_status_checks' &&
+                rule.parameters.strict_required_status_checks_policy === true &&
+                rule.parameters.required_status_checks.some((check) => check.context === 'quality' && check.integration_id === 15368));
+              let rulesetStrict = false;
+              for (const rule of strictRules) {
+                const ruleset = await request('GET /repos/{owner}/{repo}/rulesets/{ruleset_id}', { ruleset_id: rule.ruleset_id });
+                if (ruleset.enforcement === 'active' && Array.isArray(ruleset.bypass_actors) && ruleset.bypass_actors.length === 0) {
+                  rulesetStrict = true;
+                }
+              }
+              if (!classicStrict && !rulesetStrict) {
+                return skip('main must require GitHub Actions quality with strict/up-to-date checks');
+              }
+              const checks = await github.paginate('GET /repos/{owner}/{repo}/commits/{ref}/check-runs',
+                { owner, repo, ref: pr.head.sha, per_page: 100 }, (response) => response.data.check_runs);
+              // Pending checks can queue auto-merge; a known failed quality run cannot.
+              const quality = checks.filter((check) => check.name === 'quality' && check.app?.id === 15368)
+                .sort((a, b) => b.id - a.id)[0];
+              if (quality?.status === 'completed' && quality.conclusion !== 'success') {
+                return skip('latest Quality Check failed, was cancelled, or was skipped');
+              }
+              core.info('Eligible: queue squash auto-merge; GitHub must enforce all branch requirements.');
+              return true;
+            } catch (error) {
+              core.warning(`Eligibility could not be verified: ${error.message}`);
+              return false;
+            }
+
+      - name: Enable squash auto-merge without bypassing required checks
+        if: steps.eligibility.outputs.result == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: gh pr merge "$PR_NUMBER" --repo "$GH_REPO" --auto --squash --match-head-commit "$PR_HEAD_SHA"

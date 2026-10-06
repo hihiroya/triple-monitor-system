@@ -9,6 +9,35 @@ updates:
       semver-major-days: 30
       semver-minor-days: 14
       semver-patch-days: 7
+    groups:
+      vitest-minor-patch:
+        applies-to: version-updates
+        dependency-type: development
+        patterns: ["vitest", "@vitest/*"]
+        update-types: [minor, patch]
+      vitest-major:
+        applies-to: version-updates
+        dependency-type: development
+        patterns: ["vitest", "@vitest/*"]
+        update-types: [major]
+      development-minor-patch:
+        applies-to: version-updates
+        dependency-type: development
+        patterns: ["*"]
+        exclude-patterns: ["vitest", "@vitest/*"]
+        update-types: [minor, patch]
+      # Security updates have their own groups; major/production updates stay individual.
+      vitest-security-minor-patch:
+        applies-to: security-updates
+        dependency-type: development
+        patterns: ["vitest", "@vitest/*"]
+        update-types: [minor, patch]
+      development-security-minor-patch:
+        applies-to: security-updates
+        dependency-type: development
+        patterns: ["*"]
+        exclude-patterns: ["vitest", "@vitest/*"]
+        update-types: [minor, patch]
 
   - package-ecosystem: github-actions
     directory: /
