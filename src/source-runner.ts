@@ -140,7 +140,7 @@ function normalizeSeenItemIds(
 }
 
 /**
- * 直近に観測した item ID を履歴として保存する。
+ * baseline または通知成功した item ID を既存の既読履歴へ追加する。
  *
  * RSS/HTML は取得順や一覧件数が揺れるため、単一の lastSeenItemId だけに依存しすぎない。
  */
@@ -418,10 +418,7 @@ async function runListSource(
   );
 
   if (newItems.length === 0) {
-    state.sources[source.key] = {
-      lastSeenItemId: latestItem.id,
-      seenItemIds: rememberSeenItems(itemIds, previousSeenItemIds)
-    };
+    // 取得できたことだけでは既読にしない。既存履歴と通知成功時の位置を維持する。
     return {
       key: source.key,
       ok: true,
@@ -441,11 +438,6 @@ async function runListSource(
     };
     await checkpointNotification(source, state, checkpoint);
   }
-
-  state.sources[source.key] = {
-    lastSeenItemId: latestItem.id,
-    seenItemIds: rememberSeenItems(itemIds, currentSeenItemIds)
-  };
 
   return {
     key: source.key,

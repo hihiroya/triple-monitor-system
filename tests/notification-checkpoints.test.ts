@@ -60,6 +60,22 @@ describe("notification checkpoints", () => {
     expect((await loadState()).sources[source.key]?.lastSeenItemId).toBe("new1");
     expect((await loadState()).sources[source.key]?.seenItemIds).not.toContain("new2");
   });
+  it("keeps the final successful checkpoint after source completion without adding unnotified IDs", async () => {
+    vi.mocked(fetchRssSnapshot).mockResolvedValue({
+      kind: "list",
+      items: ["new2", "new1", "old", "unnotified"].map((id) => ({ id, title: id }))
+    });
+    vi.mocked(notifyDiscord).mockResolvedValue(undefined);
+    const state = initial();
+    const checkpoint = vi.fn(saveState);
+    expect(await runSource(source, state, checkpoint)).toMatchObject({ ok: true, changed: true });
+    expect(checkpoint).toHaveBeenCalledTimes(2);
+    expect(await loadState()).toEqual(state);
+    expect(state.sources[source.key]).toEqual({
+      lastSeenItemId: "new2",
+      seenItemIds: ["new2", "new1", "old"]
+    });
+  });
   it("stops further notifications when checkpoint saving fails, retaining the previous file", async () => {
     await saveState(initial());
     vi.mocked(notifyDiscord).mockResolvedValue(undefined);
