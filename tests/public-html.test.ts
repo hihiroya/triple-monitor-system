@@ -264,6 +264,8 @@ describe("fetchPublicHtmlSnapshot", () => {
       }
     };
 
-    await expect(fetchPublicHtmlSnapshot(source)).rejects.toThrow("network timeout");
+    await expect(fetchPublicHtmlSnapshot(source)).rejects.toThrow(
+      "stage=headers status=unknown reason=network"
+    );
   });
 });
