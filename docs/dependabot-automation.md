@@ -33,27 +33,25 @@ APIからimmutable SHAのmanifestとlockfileをJSONデータとして読み、�
 
 既存Quality Checkのaudit、ignore-scripts、npm 11.15.0、.npmrcのインストール元制限を変更しない。
 
-## 保護設定を有効化する前提
+## 状態分離とcheckpointの移行完了
 
-[PR #50](https://github.com/hihiroya/triple-monitor-system/pull/50)の監視状態分離と運用移行を先に完了する。現行の監視workflowはmainへ状態を直接pushするため、状態保存のためにmain保護をbypassする設定を追加しない。
+2026-10-06に#51と#50をsquash mergeし、mainのQuality Check成功後に状態分離へ移行した。停止・drain後にInitialize monitor state run 37416092249を実行し、main e1dfe77b42bd4720545e099b51e964aab4ba7a29からJSON2ファイルだけを持つmonitor-stateを初期化した。default-stateとtourism-stateのblobがコピー元mainと一致することを確認済み。
 
-別途承認された移行作業で、6監視workflowを停止して旧runを終了させ、#50を反映してmainのQuality Checkを確認する。その後Initialize monitor stateをmainから実行し、移行時点の最新状態をmonitor-stateへ引き継ぎ、監視再開後に専用ブランチへの保存とmainへの状態push停止を確認する。初期化前に監視を再開しない。
+RSS、X/Twitter、X profile、Public Siteを段階的に再開し、状態取得・検証・保存stepが成功した。X profileの通常新着2件をcheckpoint保存してmonitor-stateだけにpushした。その他は保存不要（RSSのYouTube対象は404で一時エラースキップ）。mainへの状態pushはない。NotionとTourismは無効のまま維持し、Tourismの未解決履歴を含む状態は変更していない。
 
-[状態分離・移行・障害回復の設計](https://github.com/hihiroya/triple-monitor-system/blob/chore/isolate-monitor-state-20261006/docs/monitor-state-branch.md)を参照する。状態取得失敗は監視前に停止し、保存失敗はartifactを回復してから再開する。今回のPR更新では状態ブランチ作成、稼働先切替、保護設定変更、マージは行っていない。
+[状態分離・障害回復の設計](monitor-state-branch.md)と[checkpoint・通信期限の別修正候補](notification-state-checkpoints.md)を参照する。状態取得失敗は監視前に停止し、保存失敗時は該当状態を共有する監視を停止してartifactを復旧する。mainの保護bypassは使わない。
 
-mainの保護を有効にするのは上記確認の後とし、rulesetの対象をmainだけに限定する。monitor-stateの更新にmainのPR・quality要件やbypassを流用しない。
+## 運用開始時のリポジトリ設定
 
-## 必要なリポジトリ設定（このPRでは変更しない）
+2026-10-06の設定変更前の記録：Allow auto-mergeは無効、squash mergeは有効。ruleset一覧とmainの有効ルール一覧は空。mainのclassic branch protectionは404（未設定）。実際のQuality Check jobのチェック名は`quality`、提供AppはGitHub Actions（App ID 15368）。workflow表示名`Quality Check`を必須チェック名として登録しない。
 
-2026-10-06の読み取り確認結果：Allow auto-mergeは無効、squash mergeは有効。ruleset一覧とmainの有効ルール一覧は空。mainのclassic branch protectionは404（未設定）。実際のQuality Check jobのチェック名は`quality`、提供AppはGitHub Actions（App ID 15368）。workflow表示名`Quality Check`を必須チェック名として登録しない。
-
-有効化前に以下を設定する。workflowも設定不足を確認して自動マージを停止する。
+運用開始では次の構成を適用し、APIで読み直して確認する。既存設定は維持し、追加の承認レビュー数は要求しない（設定前のレビュー要件なし、required_approving_review_count: 0）。workflowも設定不足を確認して自動マージを停止する。
 
 1. Settings → General → Pull Requestsで**Allow auto-merge**を有効にする。squash mergeを維持する。
 2. Settings → Rules → Rulesetsで、branch対象`refs/heads/main`、enforcement **Active**のrulesetを追加する。
 3. **Require a pull request before merging**と**Require status checks to pass**を有効にする。必須チェックを`quality`、提供元をGitHub Actionsに限定する（REST表現は`context: quality`、`integration_id: 15368`）。
 4. **Require branches to be up to date before merging**を有効にする（`strict_required_status_checks_policy: true`）。最新mainに対するテスト成功を要求する。古いbaseの成功だけではマージさせない。
-5. GitHub Actions／Dependabot／管理者をbypass actorに追加しない。既存の保護設定が後から追加されていた場合は、レビュー・署名・会話解決・force push／削除制限などを削除せず、必要項目だけ追加する。
+5. monitor-stateにはこのrulesetを適用しない（include: [refs/heads/main]、exclude: []）。bypass_actorsは空配列とし、GitHub Actions／Dependabot／管理者をbypass actorに追加しない。既存の保護設定が後から追加されていた場合は、レビュー・署名・会話解決・force push／削除制限などを削除せず、必要項目だけ追加する。
 
 classic branch protectionを使う場合はmainを対象に、`required_status_checks.strict: true`、`checks: [{ context: quality, app_id: 15368 }]`を設定し、PR経由のマージ、管理者を含む保護、bypass禁止を維持する。workflowはstrictかつAppを限定したrulesetまたはclassic protectionを確認する。設定の確認APIをGITHUB_TOKENで読めない場合も停止するため、実イベントで権限を確認する。
 
@@ -63,7 +61,7 @@ mainが更新されてPRがbehindになった場合はDependabotのrebaseまた�
 
 `tests/dependabot-auto-merge.test.ts`はworkflowに埋め込まれた実際の判定scriptを読み、APIとmetadataをモックして実行する。通常PR、fork、major／本番依存が混ざるグループ、CI失敗、チェック保護不足、設定無効、余分なファイル、lockfileの本番依存・major変更などの除外条件を確認する。
 
-実際のDependabotイベント、グループmetadata、署名検証Action、GITHUB_TOKENでの保護API参照、auto-merge予約とCI失敗時の待機、main更新後のstrict enforcement、security updatesの生成は未検証。今回の通常PRでQuality Checkとactionlintは確認するが、新しいworkflow自体はmainへのマージ後に初めて利用可能になる。実運用ではまず適格なDependabot PRでこれらを確認する。
+実際のDependabotイベント、グループmetadata、署名検証Action、GITHUB_TOKENでの保護API参照、auto-merge予約とCI失敗時の待機、main更新後のstrict enforcement、security updatesの生成は未検証。このPR更新で最新mainの#50・#51を取り込み、Quality Checkとactionlintを確認する。新しいworkflow自体はmainへのマージ後に利用可能になる。適格なDependabot PRがなければ実イベント検証は未完了と報告し、依存downgradeや偽Dependabot PRは作らない。
 
 #46のTypeScript 7移行は保留し、この設定変更でマージ・クローズ・無視指定を行わない。
 

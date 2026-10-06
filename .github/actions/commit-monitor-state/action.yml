@@ -1,40 +1,39 @@
 name: Commit monitor state
-description: Commit and push a monitor state file when it changed.
+description: Persist one loaded state file to monitor-state only, without changing main.
 
 inputs:
   commit-message:
     description: Commit message for monitor state updates.
     required: true
   state-path:
-    description: Path to the monitor state file.
-    required: false
-    default: state/default-state.json
+    description: Existing monitor state file path.
+    required: true
+  base-blob:
+    description: Blob returned by the successful load-monitor-state action.
+    required: true
 
 runs:
   using: composite
   steps:
-    - name: Commit and push state
+    - name: Persist state without overwriting concurrent updates
+      id: persist
       shell: bash
-      run: |
-        state_path="${{ inputs.state-path }}"
-        if git diff --quiet -- "${state_path}"; then
-          echo "No state changes."
-          exit 0
-        fi
+      env:
+        STATE_PATH: ${{ inputs.state-path }}
+        MONITOR_STATE_BASE_BLOB: ${{ inputs.base-blob }}
+        MONITOR_STATE_COMMIT_MESSAGE: ${{ inputs.commit-message }}
+      run: node dist/monitor-state-branch.js save "$STATE_PATH"
 
-        git config user.name "github-actions[bot]"
-        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-        git add "${state_path}"
-        git commit -m "${{ inputs.commit-message }}"
-
-        for attempt in 1 2 3; do
-          git pull --rebase origin "${GITHUB_REF_NAME}"
-          if git push; then
-            exit 0
-          fi
-          echo "Push failed. Retrying ${attempt}/3..."
-          sleep 2
-        done
-
-        echo "Failed to push state after retries."
-        exit 1
+    - name: Preserve state and provenance for manual recovery
+      if: failure() && steps.persist.outcome == 'failure'
+      # actions/upload-artifact v7; verified upstream commit. No notification rerun.
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+      with:
+        name: monitor-state-recovery-${{ github.run_id }}-${{ github.run_attempt }}
+        path: |
+          ${{ inputs.state-path }}
+          .monitor-state-baseline.json
+          .monitor-state-recovery.json
+        include-hidden-files: true
+        if-no-files-found: error
+        retention-days: 30

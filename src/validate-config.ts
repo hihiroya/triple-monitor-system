@@ -32,6 +32,10 @@ async function withTemporaryEnv<T>(
  * CI の品質ゲートで実ファイルを先に検証する。
  */
 export async function validateRepositoryFiles(): Promise<void> {
+  await withTemporaryEnv("MONITOR_REQUIRE_STATE", "true", validateRequiredRepositoryFiles);
+}
+
+async function validateRequiredRepositoryFiles(): Promise<void> {
   if (process.env.MONITOR_SOURCES_PATH) {
     await loadConfiguredSources();
   } else {

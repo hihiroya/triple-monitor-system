@@ -39,7 +39,11 @@ async function loadMainWithMocks(options: {
     )
   );
   const runSourceMock = vi.fn<
-    (source: MonitorSource, state: MonitorState) => Promise<SourceRunResult>
+    (
+      source: MonitorSource,
+      state: MonitorState,
+      checkpoint?: (state: MonitorState) => Promise<void>
+    ) => Promise<SourceRunResult>
   >(() => {
     const result = options.results.shift();
     if (!result) {
@@ -90,6 +94,18 @@ describe("main", () => {
     vi.restoreAllMocks();
   });
 
+  it("state 取得失敗では source 実行・通知・保存へ進まない", async () => {
+    const { runMain, loadStateMock, runSourceMock, saveStateMock } = await loadMainWithMocks({
+      sources: [rssSource],
+      state: { sources: {} },
+      results: []
+    });
+    loadStateMock.mockRejectedValueOnce(new Error("Required runtime state unavailable"));
+    await expect(runMain([])).rejects.toThrow("Required runtime state unavailable");
+    expect(runSourceMock).not.toHaveBeenCalled();
+    expect(saveStateMock).not.toHaveBeenCalled();
+  });
+
   it("parseTypeArg は有効な type filter を返す", async () => {
     const { parseGroupArg, parseTypeArg } = await loadMainWithMocks({
       sources: [],
@@ -111,7 +127,7 @@ describe("main", () => {
       ...rssSource,
       group: "standard-rss"
     };
-    const { runMain, loadSourcesMock, runSourceMock } = await loadMainWithMocks({
+    const { runMain, loadSourcesMock, runSourceMock, saveStateMock } = await loadMainWithMocks({
       sources: [groupedRssSource, notionSource],
       state: { sources: {} },
       results: [
@@ -128,6 +144,7 @@ describe("main", () => {
 
     expect(loadSourcesMock).toHaveBeenCalledWith("rss", "standard-rss");
     expect(runSourceMock).toHaveBeenCalledTimes(1);
+    expect(runSourceMock.mock.calls[0]?.[2]).toBe(saveStateMock);
     expect(runSourceMock.mock.calls[0]?.[0]).toMatchObject({ key: "rss-main" });
     expect(process.exitCode).toBeUndefined();
   });
@@ -152,6 +169,16 @@ describe("main", () => {
     expect(saveStateMock).toHaveBeenCalledWith(state);
   });
 
+  it("checkpoint fatal errors stop before the next source", async () => {
+    const { runMain, runSourceMock } = await loadMainWithMocks({
+      sources: [rssSource, notionSource],
+      state: { sources: {} },
+      results: []
+    });
+    runSourceMock.mockRejectedValueOnce(new Error("checkpoint failed"));
+    await expect(runMain([])).rejects.toThrow("checkpoint failed");
+    expect(runSourceMock).toHaveBeenCalledTimes(1);
+  });
   it("部分失敗時も他 source を継続し、最後に exitCode=1 にする", async () => {
     const { runMain, runSourceMock, loggerMock } = await loadMainWithMocks({
       sources: [rssSource, notionSource],

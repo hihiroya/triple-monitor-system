@@ -101,6 +101,7 @@ npm run monitor:tourism
 
 - 初回実行では既存記事を通知せず、現在位置だけを state に保存します。
 - Discord 通知に成功した item / version だけ state を進めます。
+- Actionsの実行時状態は専用のmonitor-stateブランチへ保存する設計です。[状態分離と移行手順](docs/monitor-state-branch.md)を確認し、初期化・運用切り替えは別途実施してください。
 - 1 source が失敗しても他 source の監視は継続します。
 - token、webhook URL、認証情報は GitHub Secrets に置き、config へ直接書きません。
 - HTML 一覧の抽出は `selector-strategies.ts` の許可済み strategy だけで行います。

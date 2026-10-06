@@ -1,0 +1,66 @@
+name: Initialize monitor state
+
+on:
+  workflow_dispatch:
+    inputs:
+      monitors-paused:
+        description: Confirm all six monitors are disabled and old runs have finished.
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: monitor-state-initialization
+  cancel-in-progress: false
+
+jobs:
+  initialize:
+    if: github.ref == 'refs/heads/main' && inputs.monitors-paused
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verify old monitors are disabled and drained
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          for workflow in rss-monitor x-twitter-monitor x-profile-monitor notion-monitor public-site-monitor tourism-monitor; do
+            endpoint="repos/$GH_REPO/actions/workflows/$workflow.yml"
+            if [ "$(gh api "$endpoint" --jq '.state')" != "disabled_manually" ]; then
+              echo "Disable $workflow before initializing monitor-state."
+              exit 1
+            fi
+            for status in queued in_progress waiting pending requested; do
+              active="$(gh api "$endpoint/runs?status=$status&per_page=100" --paginate --jq '.workflow_runs[].id')"
+              if [ -n "$active" ]; then
+                echo "$workflow still has $status runs; wait for them to finish."
+                exit 1
+              fi
+            done
+          done
+      - name: Checkout main code and migration snapshots
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: "24"
+          cache: npm
+      - name: Setup npm
+        uses: ./.github/actions/setup-npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Build
+        run: npm run build
+      - name: Validate main configuration and migration snapshots
+        run: npm run validate:config
+      - name: Create state-only branch from latest main state
+        env:
+          MONITORS_PAUSED: "true"
+        run: node dist/monitor-state-branch.js initialize
