@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel><title>日本語フィード</title>
+<item><title>日本語 &amp; &#26085;&#x672C; の記事</title><link>https://example.com/記事?a=1&amp;b=&#50;</link></item>
+<item><title><![CDATA[日本語 CDATA &amp; &#26085; <展示>]]></title><link><![CDATA[https://example.com/cdata?a=1&b=2]]></link></item>
+<item><title>&#x1F338; 日本語 &amp; 記事</title><guid><![CDATA[https://example.com/guid/日本語?a=1&b=2]]></guid></item>
+</channel></rss>
