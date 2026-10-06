@@ -41,31 +41,74 @@ export function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
-/**
- * AbortController で timeout 付き fetch を実行する。
- *
- * 外部サイトや API が応答しない場合でも GitHub Actions を長時間占有しないようにする。
- */
+export type HttpStage = "headers" | "body";
+
+export class HttpRequestError extends Error {
+  constructor(
+    readonly stage: HttpStage,
+    readonly status: number | undefined,
+    readonly reason: "timeout" | "aborted" | "network"
+  ) {
+    super(
+      `${reason === "timeout" ? "HTTPリクエストがタイムアウトしました" : "HTTPリクエストに失敗しました"}: stage=${stage} status=${status ?? "unknown"} reason=${reason}`
+    );
+  }
+}
+
+/** Buffer the response under one deadline, retaining fetch metadata for callers. */
 export async function fetchWithTimeout(
   url: string,
   init: RequestInit = {},
-  timeoutMs = DEFAULT_TIMEOUT_MS
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+  onStage?: (stage: HttpStage, status?: number) => void
 ): Promise<Response> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    return await fetch(url, {
-      ...init,
-      signal: controller.signal
-    });
-  } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new Error(`HTTPリクエストがタイムアウトしました: ${url}`, { cause: error });
+  let stage: HttpStage = "headers";
+  let status: number | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let abortParent: (() => void) | undefined;
+  const interrupted = new Promise<never>((_, reject) => {
+    const interrupt = (reason: "timeout" | "aborted") => {
+      controller.abort();
+      reject(new HttpRequestError(stage, status, reason));
+    };
+    timer = setTimeout(() => interrupt("timeout"), timeoutMs);
+    if (init.signal) {
+      abortParent = () => interrupt("aborted");
+      init.signal.addEventListener("abort", abortParent, { once: true });
+      if (init.signal.aborted) abortParent();
     }
-    throw error;
+  });
+  try {
+    return await Promise.race([
+      interrupted,
+      (async () => {
+        onStage?.(stage);
+        controller.signal.throwIfAborted();
+        const response = await fetch(url, { ...init, signal: controller.signal });
+        status = response.status;
+        stage = "body";
+        onStage?.(stage, status);
+        const body = await response.arrayBuffer();
+        controller.signal.throwIfAborted();
+        const buffered = new Response([204, 205, 304].includes(status) ? null : body, {
+          status,
+          statusText: response.statusText,
+          headers: response.headers
+        });
+        // Rebuilding the body must not discard redirect metadata.
+        for (const key of ["url", "redirected", "type"] as const) {
+          Object.defineProperty(buffered, key, { value: response[key] });
+        }
+        return buffered;
+      })()
+    ]);
+  } catch (error) {
+    if (error instanceof HttpRequestError) throw error;
+    throw new HttpRequestError(stage, status, "network");
   } finally {
     clearTimeout(timer);
+    if (abortParent) init.signal?.removeEventListener("abort", abortParent);
   }
 }
 
