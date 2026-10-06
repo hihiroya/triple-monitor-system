@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 const workflow = readFileSync(
   new URL("../.github/workflows/dependabot-auto-merge.yml", import.meta.url),
   "utf8"
-);
+).replace(/\r\n/g, "\n");
 const script = workflow
   .split("          script: |\n")[1]
   ?.split("\n      - name: Enable squash")[0]
