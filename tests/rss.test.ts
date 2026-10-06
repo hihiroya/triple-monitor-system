@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fetchRssSnapshot } from "../src/rss.js";
 import type { RssSource } from "../src/types.js";
@@ -86,6 +87,35 @@ describe("fetchRssSnapshot", () => {
       }
     ]);
   });
+
+  it.each(["rss", "atom"])(
+    "%s の日本語・entity・CDATAでも記事ID・タイトル・URLを保持する",
+    async (format) => {
+      stubFetch(
+        await readFile(new URL(`./fixtures/${format}-entities.xml`, import.meta.url), "utf8")
+      );
+      const snapshot = await fetchRssSnapshot({ ...rssSource, maxItems: 10 });
+      const expected = [
+        {
+          id: "https://example.com/記事?a=1&b=&#50;",
+          title: "日本語 & &#26085;&#x672C; の記事",
+          url: "https://example.com/記事?a=1&b=&#50;"
+        },
+        {
+          id: "https://example.com/cdata?a=1&b=2",
+          title: "日本語 CDATA &amp; &#26085; <展示>",
+          url: "https://example.com/cdata?a=1&b=2"
+        }
+      ];
+      if (format === "rss")
+        expected.push({
+          id: "https://example.com/guid/日本語?a=1&b=2",
+          title: "&#x1F338; 日本語 & 記事",
+          url: "https://example.com/guid/日本語?a=1&b=2"
+        });
+      expect(snapshot.items).toEqual(expected);
+    }
+  );
 
   it("HTTP エラーを詳細つきで失敗にする", async () => {
     stubFetch("server error", 500);
