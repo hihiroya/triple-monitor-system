@@ -17,11 +17,17 @@ describe("state", () => {
 
   afterEach(async () => {
     delete process.env.MONITOR_STATE_PATH;
+    delete process.env.MONITOR_REQUIRE_STATE;
     await rm(tempDir, { recursive: true, force: true });
   });
 
   it("state ファイルがない場合は空 state を返す", async () => {
     await expect(loadState()).resolves.toEqual({ sources: {} });
+  });
+
+  it("本番の必須 state が欠けている場合は空状態で続行しない", async () => {
+    process.env.MONITOR_REQUIRE_STATE = "true";
+    await expect(loadState()).rejects.toThrow("state file の読み込みまたは検証に失敗");
   });
 
   it("MONITOR_STATE_PATH が複数指定された場合は先頭ファイルを使う", async () => {

@@ -104,7 +104,19 @@ describe("quality gate helpers", () => {
       expect(workflow).not.toContain("- name: Propagate monitor failure");
       expect(workflow).not.toContain('exit "${{ steps.monitor.outputs.exit_code }}"');
       expect(workflow).not.toContain("EXIT_CODE: ${{ steps.monitor.outputs.exit_code }}");
-      expect(workflow).toContain("if: always() && steps.monitor.outcome != 'skipped'");
+      expect(workflow).toContain(
+        "if: always() && steps.state.outcome == 'success' && steps.monitor.outcome != 'skipped'"
+      );
+      expect(workflow).toContain("ref: main");
+      expect(workflow).toContain('MONITOR_REQUIRE_STATE: "true"');
+      expect(workflow).toContain("uses: ./.github/actions/load-monitor-state");
+      expect(workflow).toContain("base-blob: ${{ steps.state.outputs.base-blob }}");
+      expect(workflow.indexOf("- name: Validate config and runtime state")).toBeGreaterThan(
+        workflow.indexOf("- name: Load runtime state")
+      );
+      expect(workflow.indexOf("- name: Load runtime state")).toBeGreaterThan(
+        workflow.indexOf("- name: Build")
+      );
     }
   });
 
