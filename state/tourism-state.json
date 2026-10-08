@@ -1,8 +1,18 @@
 {
   "sources": {
     "enjoytokyo-tokyo-art-events": {
-      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2073402/",
+      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2084057/",
       "seenItemIds": [
+        "https://www.enjoytokyo.jp/event/2084057/",
+        "https://www.enjoytokyo.jp/event/2076629/",
+        "https://www.enjoytokyo.jp/event/2075421/",
+        "https://www.enjoytokyo.jp/event/2049005/",
+        "https://www.enjoytokyo.jp/event/2037008/",
+        "https://www.enjoytokyo.jp/event/2084070/",
+        "https://www.enjoytokyo.jp/event/2074533/",
+        "https://www.enjoytokyo.jp/event/2082905/",
+        "https://www.enjoytokyo.jp/event/2002906/",
+        "https://www.enjoytokyo.jp/event/2066312/",
         "https://www.enjoytokyo.jp/event/2073402/",
         "https://www.enjoytokyo.jp/event/2084021/",
         "https://www.enjoytokyo.jp/event/2082863/",
@@ -92,17 +102,7 @@
         "https://www.enjoytokyo.jp/event/2070806/",
         "https://www.enjoytokyo.jp/event/2006866/",
         "https://www.enjoytokyo.jp/event/2068090/",
-        "https://www.enjoytokyo.jp/event/2069982/",
-        "https://www.enjoytokyo.jp/event/2067201/",
-        "https://www.enjoytokyo.jp/event/2064970/",
-        "https://www.enjoytokyo.jp/event/2069961/",
-        "https://www.enjoytokyo.jp/event/2067214/",
-        "https://www.enjoytokyo.jp/event/2068140/",
-        "https://www.enjoytokyo.jp/event/2069954/",
-        "https://www.enjoytokyo.jp/event/2059225/",
-        "https://www.enjoytokyo.jp/event/2003823/",
-        "https://www.enjoytokyo.jp/event/2070804/",
-        "https://www.enjoytokyo.jp/event/2069003/"
+        "https://www.enjoytokyo.jp/event/2069982/"
       ]
     },
     "walkerplus-kanto-art-events": {
@@ -294,8 +294,16 @@
       ]
     },
     "scienceportal-exhibition-events": {
-      "lastSeenItemId": "https://scienceportal.jst.go.jp/events/19829/",
+      "lastSeenItemId": "https://scienceportal.jst.go.jp/events/19837/",
       "seenItemIds": [
+        "https://scienceportal.jst.go.jp/events/19837/",
+        "https://scienceportal.jst.go.jp/events/19836/",
+        "https://scienceportal.jst.go.jp/events/19835/",
+        "https://scienceportal.jst.go.jp/events/19834/",
+        "https://scienceportal.jst.go.jp/events/19833/",
+        "https://scienceportal.jst.go.jp/events/19832/",
+        "https://scienceportal.jst.go.jp/events/19831/",
+        "https://scienceportal.jst.go.jp/events/19830/",
         "https://scienceportal.jst.go.jp/events/19829/",
         "https://scienceportal.jst.go.jp/events/19828/",
         "https://scienceportal.jst.go.jp/events/19827/",
