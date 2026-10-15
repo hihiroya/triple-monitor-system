@@ -1,8 +1,12 @@
 {
   "sources": {
     "enjoytokyo-tokyo-art-events": {
-      "lastSeenItemId": "https://www.enjoytokyo.jp/event/935976/",
+      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2087150/",
       "seenItemIds": [
+        "https://www.enjoytokyo.jp/event/2087150/",
+        "https://www.enjoytokyo.jp/event/2080678/",
+        "https://www.enjoytokyo.jp/event/2084067/",
+        "https://www.enjoytokyo.jp/event/2079787/",
         "https://www.enjoytokyo.jp/event/935976/",
         "https://www.enjoytokyo.jp/event/2084232/",
         "https://www.enjoytokyo.jp/event/2085981/",
@@ -98,11 +102,7 @@
         "https://www.enjoytokyo.jp/event/2052980/",
         "https://www.enjoytokyo.jp/event/2020809/",
         "https://www.enjoytokyo.jp/event/2067248/",
-        "https://www.enjoytokyo.jp/event/2067245/",
-        "https://www.enjoytokyo.jp/event/2067359/",
-        "https://www.enjoytokyo.jp/event/2070796/",
-        "https://www.enjoytokyo.jp/event/2066505/",
-        "https://www.enjoytokyo.jp/event/2041686/"
+        "https://www.enjoytokyo.jp/event/2067245/"
       ]
     },
     "walkerplus-kanto-art-events": {
@@ -316,8 +316,13 @@
       ]
     },
     "scienceportal-exhibition-events": {
-      "lastSeenItemId": "https://scienceportal.jst.go.jp/events/19844/",
+      "lastSeenItemId": "https://scienceportal.jst.go.jp/events/19849/",
       "seenItemIds": [
+        "https://scienceportal.jst.go.jp/events/19849/",
+        "https://scienceportal.jst.go.jp/events/19848/",
+        "https://scienceportal.jst.go.jp/events/19847/",
+        "https://scienceportal.jst.go.jp/events/19846/",
+        "https://scienceportal.jst.go.jp/events/19845/",
         "https://scienceportal.jst.go.jp/events/19844/",
         "https://scienceportal.jst.go.jp/events/19843/",
         "https://scienceportal.jst.go.jp/events/19842/",
