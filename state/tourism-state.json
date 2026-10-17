@@ -1,8 +1,10 @@
 {
   "sources": {
     "enjoytokyo-tokyo-art-events": {
-      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2086191/",
+      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2085653/",
       "seenItemIds": [
+        "https://www.enjoytokyo.jp/event/2085653/",
+        "https://www.enjoytokyo.jp/event/2082856/",
         "https://www.enjoytokyo.jp/event/2086191/",
         "https://www.enjoytokyo.jp/event/2086006/",
         "https://www.enjoytokyo.jp/event/2060299/",
@@ -100,9 +102,7 @@
         "https://www.enjoytokyo.jp/event/2069200/",
         "https://www.enjoytokyo.jp/event/2056457/",
         "https://www.enjoytokyo.jp/event/2069002/",
-        "https://www.enjoytokyo.jp/event/2065101/",
-        "https://www.enjoytokyo.jp/event/2068346/",
-        "https://www.enjoytokyo.jp/event/572978/"
+        "https://www.enjoytokyo.jp/event/2065101/"
       ]
     },
     "walkerplus-kanto-art-events": {
@@ -211,8 +211,12 @@
       ]
     },
     "artscape-kantou-exhibitions": {
-      "lastSeenItemId": "https://artscape.jp/exhibitions/80494/",
+      "lastSeenItemId": "https://artscape.jp/exhibitions/80212/",
       "seenItemIds": [
+        "https://artscape.jp/exhibitions/80212/",
+        "https://artscape.jp/exhibitions/80343/",
+        "https://artscape.jp/exhibitions/80341/",
+        "https://artscape.jp/exhibitions/80502/",
         "https://artscape.jp/exhibitions/80494/",
         "https://artscape.jp/exhibitions/80308/",
         "https://artscape.jp/exhibitions/80292/",
@@ -308,11 +312,7 @@
         "https://artscape.jp/exhibitions/64931/",
         "https://artscape.jp/exhibitions/60676/",
         "https://artscape.jp/exhibitions/56480/",
-        "https://artscape.jp/exhibitions/70314/",
-        "https://artscape.jp/exhibitions/67441/",
-        "https://artscape.jp/exhibitions/65845/",
-        "https://artscape.jp/exhibitions/65778/",
-        "https://artscape.jp/exhibitions/60773/"
+        "https://artscape.jp/exhibitions/70314/"
       ]
     },
     "scienceportal-exhibition-events": {
