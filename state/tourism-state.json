@@ -1,8 +1,11 @@
 {
   "sources": {
     "enjoytokyo-tokyo-art-events": {
-      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2085653/",
+      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2088268/",
       "seenItemIds": [
+        "https://www.enjoytokyo.jp/event/2088268/",
+        "https://www.enjoytokyo.jp/event/2007469/",
+        "https://www.enjoytokyo.jp/event/2087320/",
         "https://www.enjoytokyo.jp/event/2085653/",
         "https://www.enjoytokyo.jp/event/2082856/",
         "https://www.enjoytokyo.jp/event/2086191/",
@@ -99,15 +102,13 @@
         "https://www.enjoytokyo.jp/event/2060970/",
         "https://www.enjoytokyo.jp/event/2049013/",
         "https://www.enjoytokyo.jp/event/2037036/",
-        "https://www.enjoytokyo.jp/event/2069200/",
-        "https://www.enjoytokyo.jp/event/2056457/",
-        "https://www.enjoytokyo.jp/event/2069002/",
-        "https://www.enjoytokyo.jp/event/2065101/"
+        "https://www.enjoytokyo.jp/event/2069200/"
       ]
     },
     "walkerplus-kanto-art-events": {
-      "lastSeenItemId": "https://www.walkerplus.com/event/ar0313e564201/",
+      "lastSeenItemId": "https://www.walkerplus.com/event/ar0313e607792/",
       "seenItemIds": [
+        "https://www.walkerplus.com/event/ar0313e607792/",
         "https://www.walkerplus.com/event/ar0313e564201/",
         "https://www.walkerplus.com/event/ar0313e578869/",
         "https://www.walkerplus.com/event/ar0313e588800/",
@@ -206,13 +207,13 @@
         "https://www.walkerplus.com/event/ar0313e583830/",
         "https://www.walkerplus.com/event/ar0313e590114/",
         "https://www.walkerplus.com/event/ar0313e588189/",
-        "https://www.walkerplus.com/event/ar0313e582868/",
-        "https://www.walkerplus.com/event/ar0313e583831/"
+        "https://www.walkerplus.com/event/ar0313e582868/"
       ]
     },
     "artscape-kantou-exhibitions": {
-      "lastSeenItemId": "https://artscape.jp/exhibitions/80212/",
+      "lastSeenItemId": "https://artscape.jp/exhibitions/81445/",
       "seenItemIds": [
+        "https://artscape.jp/exhibitions/81445/",
         "https://artscape.jp/exhibitions/80212/",
         "https://artscape.jp/exhibitions/80343/",
         "https://artscape.jp/exhibitions/80341/",
@@ -311,8 +312,7 @@
         "https://artscape.jp/exhibitions/65024/",
         "https://artscape.jp/exhibitions/64931/",
         "https://artscape.jp/exhibitions/60676/",
-        "https://artscape.jp/exhibitions/56480/",
-        "https://artscape.jp/exhibitions/70314/"
+        "https://artscape.jp/exhibitions/56480/"
       ]
     },
     "scienceportal-exhibition-events": {
