@@ -41,7 +41,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:
-          node-version: "24"
+          node-version: ">=24.22.1 <25"
+          check-latest: true
           cache: npm
 
       - name: Setup npm
