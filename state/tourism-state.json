@@ -1,8 +1,13 @@
 {
   "sources": {
     "enjoytokyo-tokyo-art-events": {
-      "lastSeenItemId": "https://www.enjoytokyo.jp/event/1427212/",
+      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2084238/",
       "seenItemIds": [
+        "https://www.enjoytokyo.jp/event/2084238/",
+        "https://www.enjoytokyo.jp/event/2089288/",
+        "https://www.enjoytokyo.jp/event/2086022/",
+        "https://www.enjoytokyo.jp/event/2086011/",
+        "https://www.enjoytokyo.jp/event/2089284/",
         "https://www.enjoytokyo.jp/event/1427212/",
         "https://www.enjoytokyo.jp/event/2080725/",
         "https://www.enjoytokyo.jp/event/2084240/",
@@ -97,17 +102,13 @@
         "https://www.enjoytokyo.jp/event/2086003/",
         "https://www.enjoytokyo.jp/event/2084072/",
         "https://www.enjoytokyo.jp/event/2081723/",
-        "https://www.enjoytokyo.jp/event/2085977/",
-        "https://www.enjoytokyo.jp/event/2080602/",
-        "https://www.enjoytokyo.jp/event/2086009/",
-        "https://www.enjoytokyo.jp/event/2084032/",
-        "https://www.enjoytokyo.jp/event/2084277/",
-        "https://www.enjoytokyo.jp/event/2084034/"
+        "https://www.enjoytokyo.jp/event/2085977/"
       ]
     },
     "walkerplus-kanto-art-events": {
-      "lastSeenItemId": "https://www.walkerplus.com/event/ar0312e616156/",
+      "lastSeenItemId": "https://www.walkerplus.com/event/ar0313e620176/",
       "seenItemIds": [
+        "https://www.walkerplus.com/event/ar0313e620176/",
         "https://www.walkerplus.com/event/ar0312e616156/",
         "https://www.walkerplus.com/event/ar0313e607792/",
         "https://www.walkerplus.com/event/ar0313e564201/",
@@ -206,8 +207,7 @@
         "https://www.walkerplus.com/event/ar0313e593727/",
         "https://www.walkerplus.com/event/ar0313e558982/",
         "https://www.walkerplus.com/event/ar0313e583830/",
-        "https://www.walkerplus.com/event/ar0313e590114/",
-        "https://www.walkerplus.com/event/ar0313e588189/"
+        "https://www.walkerplus.com/event/ar0313e590114/"
       ]
     },
     "artscape-kantou-exhibitions": {
