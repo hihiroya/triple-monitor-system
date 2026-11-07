@@ -1,8 +1,12 @@
 {
   "sources": {
     "enjoytokyo-tokyo-art-events": {
-      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2082857/",
+      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2082856/",
       "seenItemIds": [
+        "https://www.enjoytokyo.jp/event/2082856/",
+        "https://www.enjoytokyo.jp/event/2086006/",
+        "https://www.enjoytokyo.jp/event/2086191/",
+        "https://www.enjoytokyo.jp/event/2089377/",
         "https://www.enjoytokyo.jp/event/2082857/",
         "https://www.enjoytokyo.jp/event/2085990/",
         "https://www.enjoytokyo.jp/event/2086084/",
@@ -98,11 +102,7 @@
         "https://www.enjoytokyo.jp/event/2087190/",
         "https://www.enjoytokyo.jp/event/2088281/",
         "https://www.enjoytokyo.jp/event/1000809/",
-        "https://www.enjoytokyo.jp/event/2087370/",
-        "https://www.enjoytokyo.jp/event/2070859/",
-        "https://www.enjoytokyo.jp/event/2088268/",
-        "https://www.enjoytokyo.jp/event/2007469/",
-        "https://www.enjoytokyo.jp/event/2087320/"
+        "https://www.enjoytokyo.jp/event/2087370/"
       ]
     },
     "walkerplus-kanto-art-events": {
@@ -211,8 +211,9 @@
       ]
     },
     "artscape-kantou-exhibitions": {
-      "lastSeenItemId": "https://artscape.jp/exhibitions/82825/",
+      "lastSeenItemId": "https://artscape.jp/exhibitions/83050/",
       "seenItemIds": [
+        "https://artscape.jp/exhibitions/83050/",
         "https://artscape.jp/exhibitions/82825/",
         "https://artscape.jp/exhibitions/72268/",
         "https://artscape.jp/exhibitions/81637/",
@@ -311,8 +312,7 @@
         "https://artscape.jp/exhibitions/65440/",
         "https://artscape.jp/exhibitions/66100/",
         "https://artscape.jp/exhibitions/63480/",
-        "https://artscape.jp/exhibitions/68280/",
-        "https://artscape.jp/exhibitions/65964/"
+        "https://artscape.jp/exhibitions/68280/"
       ]
     },
     "scienceportal-exhibition-events": {
