@@ -1,8 +1,12 @@
 {
   "sources": {
     "enjoytokyo-tokyo-art-events": {
-      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2084034/",
+      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2084006/",
       "seenItemIds": [
+        "https://www.enjoytokyo.jp/event/2084006/",
+        "https://www.enjoytokyo.jp/event/2088311/",
+        "https://www.enjoytokyo.jp/event/2089367/",
+        "https://www.enjoytokyo.jp/event/2091290/",
         "https://www.enjoytokyo.jp/event/2084034/",
         "https://www.enjoytokyo.jp/event/2089292/",
         "https://www.enjoytokyo.jp/event/2084032/",
@@ -98,16 +102,13 @@
         "https://www.enjoytokyo.jp/event/2089285/",
         "https://www.enjoytokyo.jp/event/2089287/",
         "https://www.enjoytokyo.jp/event/2077497/",
-        "https://www.enjoytokyo.jp/event/2086003/",
-        "https://www.enjoytokyo.jp/event/2084072/",
-        "https://www.enjoytokyo.jp/event/2081723/",
-        "https://www.enjoytokyo.jp/event/2082870/",
-        "https://www.enjoytokyo.jp/event/2081724/"
+        "https://www.enjoytokyo.jp/event/2086003/"
       ]
     },
     "walkerplus-kanto-art-events": {
-      "lastSeenItemId": "https://www.walkerplus.com/event/ar0313e620865/",
+      "lastSeenItemId": "https://www.walkerplus.com/event/ar0313e619139/",
       "seenItemIds": [
+        "https://www.walkerplus.com/event/ar0313e619139/",
         "https://www.walkerplus.com/event/ar0313e620865/",
         "https://www.walkerplus.com/event/ar0313e620126/",
         "https://www.walkerplus.com/event/ar0313e619072/",
@@ -206,8 +207,7 @@
         "https://www.walkerplus.com/event/ar0313e599567/",
         "https://www.walkerplus.com/event/ar0314e587718/",
         "https://www.walkerplus.com/event/ar0311e587522/",
-        "https://www.walkerplus.com/event/ar0313e596777/",
-        "https://www.walkerplus.com/event/ar0313e585384/"
+        "https://www.walkerplus.com/event/ar0313e596777/"
       ]
     },
     "artscape-kantou-exhibitions": {
