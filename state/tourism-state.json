@@ -1,8 +1,16 @@
 {
   "sources": {
     "enjoytokyo-tokyo-art-events": {
-      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2081723/",
+      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2086003/",
       "seenItemIds": [
+        "https://www.enjoytokyo.jp/event/2086003/",
+        "https://www.enjoytokyo.jp/event/2019631/",
+        "https://www.enjoytokyo.jp/event/2092123/",
+        "https://www.enjoytokyo.jp/event/2092130/",
+        "https://www.enjoytokyo.jp/event/2084068/",
+        "https://www.enjoytokyo.jp/event/2091491/",
+        "https://www.enjoytokyo.jp/event/2087208/",
+        "https://www.enjoytokyo.jp/event/2091397/",
         "https://www.enjoytokyo.jp/event/2081723/",
         "https://www.enjoytokyo.jp/event/2081724/",
         "https://www.enjoytokyo.jp/event/2082870/",
@@ -94,15 +102,7 @@
         "https://www.enjoytokyo.jp/event/2034719/",
         "https://www.enjoytokyo.jp/event/883888/",
         "https://www.enjoytokyo.jp/event/2071971/",
-        "https://www.enjoytokyo.jp/event/2082894/",
-        "https://www.enjoytokyo.jp/event/496278/",
-        "https://www.enjoytokyo.jp/event/666658/",
-        "https://www.enjoytokyo.jp/event/2089295/",
-        "https://www.enjoytokyo.jp/event/2008216/",
-        "https://www.enjoytokyo.jp/event/2087214/",
-        "https://www.enjoytokyo.jp/event/2044302/",
-        "https://www.enjoytokyo.jp/event/2068110/",
-        "https://www.enjoytokyo.jp/event/2084009/"
+        "https://www.enjoytokyo.jp/event/2082894/"
       ]
     },
     "walkerplus-kanto-art-events": {
@@ -316,8 +316,16 @@
       ]
     },
     "scienceportal-exhibition-events": {
-      "lastSeenItemId": "https://scienceportal.jst.go.jp/events/19873/",
+      "lastSeenItemId": "https://scienceportal.jst.go.jp/events/19926/",
       "seenItemIds": [
+        "https://scienceportal.jst.go.jp/events/19926/",
+        "https://scienceportal.jst.go.jp/events/19925/",
+        "https://scienceportal.jst.go.jp/events/19924/",
+        "https://scienceportal.jst.go.jp/events/19923/",
+        "https://scienceportal.jst.go.jp/events/19922/",
+        "https://scienceportal.jst.go.jp/events/19920/",
+        "https://scienceportal.jst.go.jp/events/19919/",
+        "https://scienceportal.jst.go.jp/events/19917/",
         "https://scienceportal.jst.go.jp/events/19873/",
         "https://scienceportal.jst.go.jp/events/19872/",
         "https://scienceportal.jst.go.jp/events/19916/",
@@ -409,15 +417,7 @@
         "https://scienceportal.jst.go.jp/events/19818/",
         "https://scienceportal.jst.go.jp/events/19817/",
         "https://scienceportal.jst.go.jp/events/19816/",
-        "https://scienceportal.jst.go.jp/events/19814/",
-        "https://scienceportal.jst.go.jp/events/19813/",
-        "https://scienceportal.jst.go.jp/events/19812/",
-        "https://scienceportal.jst.go.jp/events/19811/",
-        "https://scienceportal.jst.go.jp/events/19810/",
-        "https://scienceportal.jst.go.jp/events/19809/",
-        "https://scienceportal.jst.go.jp/events/19808/",
-        "https://scienceportal.jst.go.jp/events/19807/",
-        "https://scienceportal.jst.go.jp/events/19806/"
+        "https://scienceportal.jst.go.jp/events/19814/"
       ]
     },
     "nmri-mail-news": {
