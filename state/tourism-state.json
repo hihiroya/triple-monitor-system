@@ -1,8 +1,12 @@
 {
   "sources": {
     "enjoytokyo-tokyo-art-events": {
-      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2076629/",
+      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2080591/",
       "seenItemIds": [
+        "https://www.enjoytokyo.jp/event/2080591/",
+        "https://www.enjoytokyo.jp/event/2086017/",
+        "https://www.enjoytokyo.jp/event/2090204/",
+        "https://www.enjoytokyo.jp/event/2070806/",
         "https://www.enjoytokyo.jp/event/2076629/",
         "https://www.enjoytokyo.jp/event/2084057/",
         "https://www.enjoytokyo.jp/event/2090222/",
@@ -98,11 +102,7 @@
         "https://www.enjoytokyo.jp/event/2080701/",
         "https://www.enjoytokyo.jp/event/2085977/",
         "https://www.enjoytokyo.jp/event/2086045/",
-        "https://www.enjoytokyo.jp/event/2000683/",
-        "https://www.enjoytokyo.jp/event/2087153/",
-        "https://www.enjoytokyo.jp/event/2089429/",
-        "https://www.enjoytokyo.jp/event/2087146/",
-        "https://www.enjoytokyo.jp/event/2090224/"
+        "https://www.enjoytokyo.jp/event/2000683/"
       ]
     },
     "walkerplus-kanto-art-events": {
@@ -211,8 +211,9 @@
       ]
     },
     "artscape-kantou-exhibitions": {
-      "lastSeenItemId": "https://artscape.jp/exhibitions/83032/",
+      "lastSeenItemId": "https://artscape.jp/exhibitions/84117/",
       "seenItemIds": [
+        "https://artscape.jp/exhibitions/84117/",
         "https://artscape.jp/exhibitions/83032/",
         "https://artscape.jp/exhibitions/83034/",
         "https://artscape.jp/exhibitions/83050/",
@@ -311,8 +312,7 @@
         "https://artscape.jp/exhibitions/59436/",
         "https://artscape.jp/exhibitions/57516/",
         "https://artscape.jp/exhibitions/56241/",
-        "https://artscape.jp/exhibitions/65440/",
-        "https://artscape.jp/exhibitions/66100/"
+        "https://artscape.jp/exhibitions/65440/"
       ]
     },
     "scienceportal-exhibition-events": {
@@ -421,8 +421,9 @@
       ]
     },
     "nmri-mail-news": {
-      "lastSeenItemId": "https://www.nmri.go.jp/news/mail_news/2026/mail_news237.html",
+      "lastSeenItemId": "https://www.nmri.go.jp/news/mail_news/2026/mail_news238.html",
       "seenItemIds": [
+        "https://www.nmri.go.jp/news/mail_news/2026/mail_news238.html",
         "https://www.nmri.go.jp/news/mail_news/2026/mail_news237.html",
         "https://www.nmri.go.jp/news/mail_news/2026/mail_news236.html",
         "https://www.nmri.go.jp/news/mail_news/2026/mail_news235.html",
