@@ -316,8 +316,14 @@
       ]
     },
     "scienceportal-exhibition-events": {
-      "lastSeenItemId": "https://scienceportal.jst.go.jp/events/19947/",
+      "lastSeenItemId": "https://scienceportal.jst.go.jp/events/19953/",
       "seenItemIds": [
+        "https://scienceportal.jst.go.jp/events/19953/",
+        "https://scienceportal.jst.go.jp/events/19952/",
+        "https://scienceportal.jst.go.jp/events/19951/",
+        "https://scienceportal.jst.go.jp/events/19950/",
+        "https://scienceportal.jst.go.jp/events/19949/",
+        "https://scienceportal.jst.go.jp/events/19948/",
         "https://scienceportal.jst.go.jp/events/19947/",
         "https://scienceportal.jst.go.jp/events/19946/",
         "https://scienceportal.jst.go.jp/events/19943/",
@@ -411,13 +417,7 @@
         "https://scienceportal.jst.go.jp/events/19842/",
         "https://scienceportal.jst.go.jp/events/19841/",
         "https://scienceportal.jst.go.jp/events/19840/",
-        "https://scienceportal.jst.go.jp/events/19839/",
-        "https://scienceportal.jst.go.jp/events/19838/",
-        "https://scienceportal.jst.go.jp/events/19837/",
-        "https://scienceportal.jst.go.jp/events/19836/",
-        "https://scienceportal.jst.go.jp/events/19835/",
-        "https://scienceportal.jst.go.jp/events/19834/",
-        "https://scienceportal.jst.go.jp/events/19833/"
+        "https://scienceportal.jst.go.jp/events/19839/"
       ]
     },
     "nmri-mail-news": {
