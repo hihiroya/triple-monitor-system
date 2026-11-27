@@ -1,8 +1,10 @@
 {
   "sources": {
     "enjoytokyo-tokyo-art-events": {
-      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2086006/",
+      "lastSeenItemId": "https://www.enjoytokyo.jp/event/2086191/",
       "seenItemIds": [
+        "https://www.enjoytokyo.jp/event/2086191/",
+        "https://www.enjoytokyo.jp/event/2089285/",
         "https://www.enjoytokyo.jp/event/2086006/",
         "https://www.enjoytokyo.jp/event/2090223/",
         "https://www.enjoytokyo.jp/event/2086084/",
@@ -100,9 +102,7 @@
         "https://www.enjoytokyo.jp/event/2090521/",
         "https://www.enjoytokyo.jp/event/2090310/",
         "https://www.enjoytokyo.jp/event/2088268/",
-        "https://www.enjoytokyo.jp/event/2091241/",
-        "https://www.enjoytokyo.jp/event/2070859/",
-        "https://www.enjoytokyo.jp/event/2089551/"
+        "https://www.enjoytokyo.jp/event/2091241/"
       ]
     },
     "walkerplus-kanto-art-events": {
